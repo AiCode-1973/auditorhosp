@@ -257,7 +257,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <!-- Footer -->
         <div class="mt-8 space-y-2 text-center">
             <p class="text-xs text-slate-500">
-                &copy; <?php echo date('Y'); ?> AuditorHosp. Todos os direitos reservados.
+                &copy; <?php echo date('Y'); ?> AuditorHosp - Todos os direitos reservados.
             </p>
             <p class="text-xs text-slate-400">
                 Desenvolvido por: <a href="https://aicode.dev.br" target="_blank" class="text-brand-primary hover:text-cyan-400 transition-colors font-medium">AiCode</a>
