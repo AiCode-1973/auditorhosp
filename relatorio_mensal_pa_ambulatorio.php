@@ -188,6 +188,7 @@ try {
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider print:px-2 print:py-1">Competência</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider print:px-2 print:py-1">Convênio</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider print:px-2 print:py-1">Setor</th>
+                                <th class="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider print:px-2 print:py-1">Quant.</th>
                                 <th class="px-4 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider print:px-2 print:py-1">V. Inicial</th>
                                 <th class="px-4 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider print:px-2 print:py-1">V. Retirado</th>
                                 <th class="px-4 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider print:px-2 print:py-1">V. Acres.</th>
@@ -224,6 +225,9 @@ try {
                                         ?>">
                                             <?php echo htmlspecialchars($linha['Setor']); ?>
                                         </span>
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center font-semibold print:px-2 print:py-1">
+                                        <?php echo number_format($linha['total_atendimentos'], 0, ',', '.'); ?>
                                     </td>
                                     <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right print:px-2 print:py-1">
                                         R$ <?php echo number_format($linha['valor_inicial'], 2, ',', '.'); ?>
@@ -276,17 +280,18 @@ try {
                         <tfoot class="bg-gray-100 font-bold border-t-2 border-gray-300">
                             <tr>
                                 <td colspan="3" class="px-4 py-3 text-right text-xs text-gray-700 uppercase print:px-2 print:py-1">Totais:</td>
-                                <td class="px-4 py-3 text-right text-sm text-gray-900 print:px-2 print:py-1">R$ <?php echo number_format($total_inicial, 2, ',', '.'); ?></td>
-                                <td class="px-4 py-3 text-right text-sm text-red-600 print:px-2 print:py-1">R$ <?php echo number_format($total_retirado, 2, ',', '.'); ?></td>
-                                <td class="px-4 py-3 text-right text-sm text-green-600 print:px-2 print:py-1">R$ <?php echo number_format($total_acrescentado, 2, ',', '.'); ?></td>
-                                <td class="px-4 py-3 text-right text-sm text-gray-900 print:px-2 print:py-1">R$ <?php echo number_format($total_final, 2, ',', '.'); ?></td>
-                                <td class="px-4 py-3 text-right text-sm text-gray-900 print:px-2 print:py-1">R$ <?php echo number_format($total_glosado, 2, ',', '.'); ?></td>
-                                <td class="px-4 py-3 text-right text-sm text-gray-900 print:px-2 print:py-1">R$ <?php echo number_format($total_aceito, 2, ',', '.'); ?></td>
-                                <td class="px-4 py-3 text-right text-sm text-gray-900 print:px-2 print:py-1">R$ <?php echo number_format($total_faturado, 2, ',', '.'); ?></td>
-                                <td class="px-4 py-3 text-right text-sm text-blue-700 bg-blue-50 print:px-2 print:py-1"><?php echo number_format($perc_retirado, 2, ',', '.'); ?>%</td>
-                                <td class="px-4 py-3 text-right text-sm text-green-700 bg-green-50 print:px-2 print:py-1"><?php echo number_format($perc_acrescentado, 2, ',', '.'); ?>%</td>
-                                <td class="px-4 py-3 text-right text-sm text-blue-700 bg-blue-50 print:px-2 print:py-1"><?php echo number_format($perc_glosado, 2, ',', '.'); ?>%</td>
-                                <td class="px-4 py-3 text-right text-sm text-green-700 bg-green-50 print:px-2 print:py-1"><?php echo number_format($perc_aceito, 2, ',', '.'); ?>%</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-center text-sm text-gray-900 print:px-2 print:py-1"><?php echo number_format($total_atendimentos, 0, ',', '.'); ?></td>
+                                <td class="px-4 py-3 whitespace-nowrap text-right text-sm text-gray-900 print:px-2 print:py-1">R$ <?php echo number_format($total_inicial, 2, ',', '.'); ?></td>
+                                <td class="px-4 py-3 whitespace-nowrap text-right text-sm text-red-600 print:px-2 print:py-1">R$ <?php echo number_format($total_retirado, 2, ',', '.'); ?></td>
+                                <td class="px-4 py-3 whitespace-nowrap text-right text-sm text-green-600 print:px-2 print:py-1">R$ <?php echo number_format($total_acrescentado, 2, ',', '.'); ?></td>
+                                <td class="px-4 py-3 whitespace-nowrap text-right text-sm text-gray-900 print:px-2 print:py-1">R$ <?php echo number_format($total_final, 2, ',', '.'); ?></td>
+                                <td class="px-4 py-3 whitespace-nowrap text-right text-sm text-gray-900 print:px-2 print:py-1">R$ <?php echo number_format($total_glosado, 2, ',', '.'); ?></td>
+                                <td class="px-4 py-3 whitespace-nowrap text-right text-sm text-gray-900 print:px-2 print:py-1">R$ <?php echo number_format($total_aceito, 2, ',', '.'); ?></td>
+                                <td class="px-4 py-3 whitespace-nowrap text-right text-sm text-gray-900 print:px-2 print:py-1">R$ <?php echo number_format($total_faturado, 2, ',', '.'); ?></td>
+                                <td class="px-4 py-3 whitespace-nowrap text-right text-sm text-blue-700 bg-blue-50 print:px-2 print:py-1"><?php echo number_format($perc_retirado, 2, ',', '.'); ?>%</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-right text-sm text-green-700 bg-green-50 print:px-2 print:py-1"><?php echo number_format($perc_acrescentado, 2, ',', '.'); ?>%</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-right text-sm text-blue-700 bg-blue-50 print:px-2 print:py-1"><?php echo number_format($perc_glosado, 2, ',', '.'); ?>%</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-right text-sm text-green-700 bg-green-50 print:px-2 print:py-1"><?php echo number_format($perc_aceito, 2, ',', '.'); ?>%</td>
                                 <td class="px-4 py-3 print:hidden"></td>
                             </tr>
                         </tfoot>

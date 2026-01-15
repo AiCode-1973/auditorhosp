@@ -267,6 +267,7 @@ try {
                                 <span class="px-2 py-1 rounded <?php 
                                     if ($at['setor'] == 'PA') echo 'bg-blue-100 text-blue-800';
                                     elseif ($at['setor'] == 'AMB') echo 'bg-purple-100 text-purple-800';
+                                    elseif ($at['setor'] == 'PA/NC' || $at['setor'] == 'AMB/NC') echo 'bg-red-100 text-red-800';
                                     else echo 'bg-green-100 text-green-800';
                                 ?>">
                                     <?php echo htmlspecialchars($at['setor']); ?>
@@ -447,9 +448,8 @@ try {
                                 <div>
                                     <label for="modal_setor" class="block text-sm font-medium text-gray-700 mb-1">Setor *</label>
                                     <select name="setor" id="modal_setor" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" required>
-                                        <option value="PA">PA - Pronto Atendimento</option>
-                                        <option value="AMB">AMB - Ambulatório</option>
-                                        <option value="NC">NC - Não Corrigida</option>
+                                        <option value="PA/NC">PA/NC - PA Não Corrigida</option>
+                                        <option value="AMB/NC">AMB/NC - AMB Não Corrigida</option>
                                     </select>
                                 </div>
                                 

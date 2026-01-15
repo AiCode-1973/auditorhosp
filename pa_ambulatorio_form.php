@@ -87,7 +87,7 @@ if ($id) {
 }
 
 // Verificar se é edição com setor NC (para desabilitar campos)
-$is_nc_edit = ($id && $setor == 'NC');
+$is_nc_edit = ($id && ($setor == 'PA/NC' || $setor == 'AMB/NC'));
 
 // Buscar convênios
 try {
@@ -105,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($inclusao_rapida) {
         // Processamento simplificado para inclusão rápida
         $guia_paciente = trim($_POST['guia_paciente']);
-        $setor = isset($_POST['setor']) ? $_POST['setor'] : 'PA';
+        $setor = isset($_POST['setor']) ? $_POST['setor'] : 'PA/NC';
         $competencia = isset($_POST['competencia']) ? $_POST['competencia'] . '-01' : null;
         $convenio_id = isset($_POST['convenio_id']) ? $_POST['convenio_id'] : 1;
         $status = isset($_POST['status']) ? $_POST['status'] : 'Em Aberto';
@@ -305,7 +305,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <select name="setor" id="setor" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
                         <option value="PA" <?php echo $setor == 'PA' ? 'selected' : ''; ?>>PA (Pronto Atendimento)</option>
                         <option value="AMB" <?php echo $setor == 'AMB' ? 'selected' : ''; ?>>AMB (Ambulatório)</option>
-                        <option value="NC" <?php echo $setor == 'NC' ? 'selected' : ''; ?>>NC (Não Corrigida)</option>
+                        <option value="PA/NC" <?php echo $setor == 'PA/NC' ? 'selected' : ''; ?>>PA/NC - PA Não Corrigida</option>
+                        <option value="AMB/NC" <?php echo $setor == 'AMB/NC' ? 'selected' : ''; ?>>AMB/NC - AMB Não Corrigida</option>
                     </select>
                 </div>
 
