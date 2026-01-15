@@ -149,6 +149,7 @@ try {
                 <label for="filtro_status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
                 <select name="filtro_status" id="filtro_status" class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[150px]">
                     <option value="">Todos</option>
+                    <option value="Pré análise" <?php echo $filtro_status == 'Pré análise' ? 'selected' : ''; ?>>Pré análise</option>
                     <option value="Em Aberto" <?php echo $filtro_status == 'Em Aberto' ? 'selected' : ''; ?>>Em Aberto</option>
                     <option value="Auditado" <?php echo $filtro_status == 'Auditado' ? 'selected' : ''; ?>>Auditado</option>
                     <option value="Fechado" <?php echo $filtro_status == 'Fechado' ? 'selected' : ''; ?>>Fechado</option>
