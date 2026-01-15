@@ -86,6 +86,9 @@ if ($id) {
     }
 }
 
+// Verificar se é edição com setor NC (para desabilitar campos)
+$is_nc_edit = ($id && $setor == 'NC');
+
 // Buscar convênios
 try {
     $stmt = $pdo->query("SELECT id, nome_convenio FROM convenios ORDER BY nome_convenio");
@@ -102,6 +105,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($inclusao_rapida) {
         // Processamento simplificado para inclusão rápida
         $guia_paciente = trim($_POST['guia_paciente']);
+        $setor = isset($_POST['setor']) ? $_POST['setor'] : 'PA';
+        $competencia = isset($_POST['competencia']) ? $_POST['competencia'] . '-01' : null;
+        $convenio_id = isset($_POST['convenio_id']) ? $_POST['convenio_id'] : 1;
+        $status = isset($_POST['status']) ? $_POST['status'] : 'Em Aberto';
         
         function formatCurrency($val) {
             $val = str_replace('.', '', $val);
@@ -110,6 +117,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         $valor_total_db = formatCurrency($_POST['valor_total']);
+        $valor_glosado_db = isset($_POST['valor_glosado']) ? formatCurrency($_POST['valor_glosado']) : 0;
+        $valor_aceito_db = isset($_POST['valor_aceito']) ? formatCurrency($_POST['valor_aceito']) : 0;
         
         if (empty($guia_paciente) || $valor_total_db <= 0) {
             $mensagem = "<div class='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4'>Preencha o número da guia e o valor final.</div>";
@@ -117,20 +126,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 // Inserir atendimento com dados mínimos
                 $sql = "INSERT INTO pa_ambulatorio 
-                        (data_recebimento, setor, convenio_id, guia_paciente, valor_inicial, valor_retirado, 
+                        (data_recebimento, setor, convenio_id, guia_paciente, competencia, valor_inicial, valor_retirado, 
                          valor_acrescentado, valor_total, valor_glosado, valor_aceito, valor_faturado, 
                          falta_nf, status, observacoes)
-                        VALUES (NOW(), 'PA', 1, ?, 0, 0, 0, ?, 0, 0, ?, 'Não', 'Em Aberto', 'Inclusão rápida')";
+                        VALUES (NOW(), ?, ?, ?, ?, 0, 0, 0, ?, ?, ?, ?, 'Não', ?, 'Inclusão rápida')";
                 
                 $stmt = $pdo->prepare($sql);
-                $stmt->execute([$guia_paciente, $valor_total_db, $valor_total_db]);
+                $stmt->execute([$setor, $convenio_id, $guia_paciente, $competencia, $valor_total_db, $valor_glosado_db, $valor_aceito_db, $valor_total_db, $status]);
                 
                 $novo_id = $pdo->lastInsertId();
                 
                 // Registrar log
                 registrarLog($pdo, null, 'INCLUSAO_RAPIDA_PA', "Atendimento PA incluído rapidamente - Guia: $guia_paciente", null, [
                     'guia_paciente' => $guia_paciente,
-                    'valor_total' => $valor_total_db
+                    'valor_total' => $valor_total_db,
+                    'competencia' => $competencia,
+                    'convenio_id' => $convenio_id,
+                    'status' => $status
                 ]);
                 
                 $mensagem = "<div class='bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4'>Atendimento incluído com sucesso!</div>";
@@ -284,7 +296,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <!-- Data Recebimento -->
                 <div class="col-span-2 md:col-span-1">
                     <label for="data_recebimento" class="block text-sm font-medium text-gray-700 mb-1">Data Recebimento *</label>
-                    <input type="date" name="data_recebimento" id="data_recebimento" value="<?php echo $data_recebimento; ?>" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    <input type="date" name="data_recebimento" id="data_recebimento" value="<?php echo $data_recebimento; ?>" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 <?php echo $is_nc_edit ? 'bg-gray-100' : ''; ?>" <?php echo $is_nc_edit ? 'disabled' : 'required'; ?>>
                 </div>
 
                 <!-- Setor -->
@@ -293,6 +305,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <select name="setor" id="setor" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
                         <option value="PA" <?php echo $setor == 'PA' ? 'selected' : ''; ?>>PA (Pronto Atendimento)</option>
                         <option value="AMB" <?php echo $setor == 'AMB' ? 'selected' : ''; ?>>AMB (Ambulatório)</option>
+                        <option value="NC" <?php echo $setor == 'NC' ? 'selected' : ''; ?>>NC (Não Corrigida)</option>
                     </select>
                 </div>
 
@@ -318,25 +331,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <!-- Data Entrada -->
                 <div>
                     <label for="data_entrada" class="block text-sm font-medium text-gray-700 mb-1">Data Entrada</label>
-                    <input type="date" name="data_entrada" id="data_entrada" value="<?php echo $data_entrada; ?>" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <input type="date" name="data_entrada" id="data_entrada" value="<?php echo $data_entrada; ?>" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 <?php echo $is_nc_edit ? 'bg-gray-100' : ''; ?>" <?php echo $is_nc_edit ? 'disabled' : ''; ?>>
                 </div>
 
                 <!-- Data Saída -->
                 <div>
                     <label for="data_saida" class="block text-sm font-medium text-gray-700 mb-1">Data Saída</label>
-                    <input type="date" name="data_saida" id="data_saida" value="<?php echo $data_saida; ?>" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <input type="date" name="data_saida" id="data_saida" value="<?php echo $data_saida; ?>" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 <?php echo $is_nc_edit ? 'bg-gray-100' : ''; ?>" <?php echo $is_nc_edit ? 'disabled' : ''; ?>>
                 </div>
 
                 <!-- Valor Inicial -->
                 <div>
                     <label for="valor_inicial" class="block text-sm font-medium text-gray-700 mb-1">Valor Inicial (R$)</label>
-                    <input type="text" name="valor_inicial" id="valor_inicial" value="<?php echo $valor_inicial; ?>" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0,00" onkeyup="formatarMoeda(this); calcularAcrescentado();">
+                    <input type="text" name="valor_inicial" id="valor_inicial" value="<?php echo $valor_inicial; ?>" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 <?php echo $is_nc_edit ? 'bg-gray-100' : ''; ?>" placeholder="0,00" onkeyup="formatarMoeda(this); calcularAcrescentado();" <?php echo $is_nc_edit ? 'disabled' : ''; ?>>
                 </div>
 
                 <!-- Valor Retirado -->
                 <div>
                     <label for="valor_retirado" class="block text-sm font-medium text-gray-700 mb-1">Valor Retirado (R$)</label>
-                    <input type="text" name="valor_retirado" id="valor_retirado" value="<?php echo $valor_retirado; ?>" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-red-600" placeholder="0,00" onkeyup="formatarMoeda(this); calcularAcrescentado();">
+                    <input type="text" name="valor_retirado" id="valor_retirado" value="<?php echo $valor_retirado; ?>" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-red-600 <?php echo $is_nc_edit ? 'bg-gray-100' : ''; ?>" placeholder="0,00" onkeyup="formatarMoeda(this); calcularAcrescentado();" <?php echo $is_nc_edit ? 'disabled' : ''; ?>>
                 </div>
 
                 <!-- Valor Total -->
@@ -372,7 +385,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <!-- Falta NF -->
                 <div>
                     <label for="falta_nf" class="block text-sm font-medium text-gray-700 mb-1">Falta NF?</label>
-                    <select name="falta_nf" id="falta_nf" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <select name="falta_nf" id="falta_nf" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 <?php echo $is_nc_edit ? 'bg-gray-100' : ''; ?>" <?php echo $is_nc_edit ? 'disabled' : ''; ?>>
                         <option value="Não" <?php echo $falta_nf == 'Não' ? 'selected' : ''; ?>>Não</option>
                         <option value="Sim" <?php echo $falta_nf == 'Sim' ? 'selected' : ''; ?>>Sim</option>
                     </select>
@@ -391,7 +404,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <!-- Observações -->
                 <div class="col-span-2">
                     <label for="observacoes" class="block text-sm font-medium text-gray-700 mb-1">Observações</label>
-                    <textarea name="observacoes" id="observacoes" rows="3" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"><?php echo htmlspecialchars($observacoes); ?></textarea>
+                    <textarea name="observacoes" id="observacoes" rows="3" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 <?php echo $is_nc_edit ? 'bg-gray-100' : ''; ?>" <?php echo $is_nc_edit ? 'disabled' : ''; ?>><?php echo htmlspecialchars($observacoes); ?></textarea>
                 </div>
             </div>
 

@@ -46,6 +46,11 @@ if (count($where_clauses) > 0) {
     $where_sql = "WHERE " . implode(" AND ", $where_clauses);
 }
 
+// Buscar convênios para o select do modal
+$sql_convenios = "SELECT id, nome_convenio FROM convenios ORDER BY nome_convenio";
+$stmt_convenios = $pdo->query($sql_convenios);
+$convenios = $stmt_convenios->fetchAll(PDO::FETCH_ASSOC);
+
 try {
     // Contar total de registros
     $sql_count = "
@@ -129,6 +134,7 @@ try {
                     <option value="">Todos</option>
                     <option value="PA" <?php echo $filtro_setor == 'PA' ? 'selected' : ''; ?>>PA</option>
                     <option value="AMB" <?php echo $filtro_setor == 'AMB' ? 'selected' : ''; ?>>AMB</option>
+                    <option value="NC" <?php echo $filtro_setor == 'NC' ? 'selected' : ''; ?>>NC</option>
                 </select>
             </div>
             <div>
@@ -258,7 +264,11 @@ try {
                                 <?php echo $at['data_recebimento'] ? date('d/m/Y', strtotime($at['data_recebimento'])) : '-'; ?>
                             </td>
                             <td class="px-1 py-2 text-xs font-bold text-gray-900">
-                                <span class="px-2 py-1 rounded <?php echo $at['setor'] == 'PA' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'; ?>">
+                                <span class="px-2 py-1 rounded <?php 
+                                    if ($at['setor'] == 'PA') echo 'bg-blue-100 text-blue-800';
+                                    elseif ($at['setor'] == 'AMB') echo 'bg-purple-100 text-purple-800';
+                                    else echo 'bg-green-100 text-green-800';
+                                ?>">
                                     <?php echo htmlspecialchars($at['setor']); ?>
                                 </span>
                             </td>
@@ -433,10 +443,59 @@ try {
                                     <input type="text" name="guia_paciente" id="modal_guia" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" required>
                                 </div>
                                 
+                                <!-- Setor -->
+                                <div>
+                                    <label for="modal_setor" class="block text-sm font-medium text-gray-700 mb-1">Setor *</label>
+                                    <select name="setor" id="modal_setor" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" required>
+                                        <option value="PA">PA - Pronto Atendimento</option>
+                                        <option value="AMB">AMB - Ambulatório</option>
+                                        <option value="NC">NC - Não Corrigida</option>
+                                    </select>
+                                </div>
+                                
+                                <!-- Competência -->
+                                <div>
+                                    <label for="modal_competencia" class="block text-sm font-medium text-gray-700 mb-1">Competência (Mês/Ano) *</label>
+                                    <input type="month" name="competencia" id="modal_competencia" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" required>
+                                </div>
+                                
+                                <!-- Convênio -->
+                                <div>
+                                    <label for="modal_convenio" class="block text-sm font-medium text-gray-700 mb-1">Convênio *</label>
+                                    <select name="convenio_id" id="modal_convenio" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" required>
+                                        <option value="">Selecione um convênio</option>
+                                        <?php foreach ($convenios as $convenio): ?>
+                                            <option value="<?php echo $convenio['id']; ?>"><?php echo htmlspecialchars($convenio['nome_convenio']); ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                
                                 <!-- Valor Final -->
                                 <div>
                                     <label for="modal_valor" class="block text-sm font-medium text-gray-700 mb-1">Valor Final (R$) *</label>
                                     <input type="text" name="valor_total" id="modal_valor" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 text-right" onkeyup="formatMoney(this)" required>
+                                </div>
+                                
+                                <!-- Valor Glosado -->
+                                <div>
+                                    <label for="modal_glosado" class="block text-sm font-medium text-gray-700 mb-1">Valor Glosado (R$)</label>
+                                    <input type="text" name="valor_glosado" id="modal_glosado" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 text-right" onkeyup="formatMoney(this)">
+                                </div>
+                                
+                                <!-- Valor Aceito -->
+                                <div>
+                                    <label for="modal_aceito" class="block text-sm font-medium text-gray-700 mb-1">Valor Aceito (R$)</label>
+                                    <input type="text" name="valor_aceito" id="modal_aceito" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 text-right" onkeyup="formatMoney(this)">
+                                </div>
+                                
+                                <!-- Status -->
+                                <div>
+                                    <label for="modal_status" class="block text-sm font-medium text-gray-700 mb-1">Status *</label>
+                                    <select name="status" id="modal_status" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" required>
+                                        <option value="Em Aberto">Em Aberto</option>
+                                        <option value="Auditado">Auditado</option>
+                                        <option value="Fechado">Fechado</option>
+                                    </select>
                                 </div>
 
                                 <input type="hidden" name="inclusao_rapida" value="1">

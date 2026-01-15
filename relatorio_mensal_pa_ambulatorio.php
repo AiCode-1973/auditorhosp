@@ -138,6 +138,7 @@ try {
                             <option value="">Todos</option>
                             <option value="PA" <?php echo $filtro_setor == 'PA' ? 'selected' : ''; ?>>PA</option>
                             <option value="AMB" <?php echo $filtro_setor == 'AMB' ? 'selected' : ''; ?>>AMB</option>
+                            <option value="NC" <?php echo $filtro_setor == 'NC' ? 'selected' : ''; ?>>NC</option>
                         </select>
                     </div>
 
@@ -216,7 +217,11 @@ try {
                                         <?php echo htmlspecialchars($linha['Convenio']); ?>
                                     </td>
                                     <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 print:px-2 print:py-1">
-                                        <span class="px-2 py-1 rounded text-xs font-semibold <?php echo $linha['Setor'] == 'PA' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'; ?>">
+                                        <span class="px-2 py-1 rounded text-xs font-semibold <?php 
+                                            if ($linha['Setor'] == 'PA') echo 'bg-blue-100 text-blue-800';
+                                            elseif ($linha['Setor'] == 'AMB') echo 'bg-purple-100 text-purple-800';
+                                            else echo 'bg-green-100 text-green-800';
+                                        ?>">
                                             <?php echo htmlspecialchars($linha['Setor']); ?>
                                         </span>
                                     </td>
