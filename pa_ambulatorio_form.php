@@ -96,42 +96,87 @@ try {
 
 // Processar Formulário
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $data_recebimento = $_POST['data_recebimento'];
-    $competencia = !empty($_POST['competencia']) ? $_POST['competencia'] . '-01' : null;
-    $setor = $_POST['setor'];
-    $convenio_id = $_POST['convenio_id'];
-    $guia_paciente = $_POST['guia_paciente'];
-    $data_entrada = !empty($_POST['data_entrada']) ? $_POST['data_entrada'] : null;
-    $data_saida = !empty($_POST['data_saida']) ? $_POST['data_saida'] : null;
+    // Verificar se é inclusão rápida
+    $inclusao_rapida = isset($_POST['inclusao_rapida']) && $_POST['inclusao_rapida'] == '1';
     
-    // Helper function to format currency
-    function formatCurrency($val) {
-        $val = str_replace('.', '', $val);
-        $val = str_replace(',', '.', $val);
-        return $val ?: 0;
-    }
-
-    $valor_inicial_db = formatCurrency($_POST['valor_inicial']);
-    $valor_retirado_db = formatCurrency($_POST['valor_retirado']);
-    $valor_acrescentado_db = formatCurrency($_POST['valor_acrescentado']);
-    $valor_total_db = formatCurrency($_POST['valor_total']);
-    $valor_glosado_db = formatCurrency($_POST['valor_glosado']);
-    $valor_aceito_db = formatCurrency($_POST['valor_aceito']);
-    $valor_faturado_db = formatCurrency($_POST['valor_faturado']);
-
-    $falta_nf = $_POST['falta_nf'];
-    $status = $_POST['status'];
-    $observacoes = $_POST['observacoes'];
-
-    if (empty($data_recebimento) || empty($setor) || empty($convenio_id)) {
-        $mensagem = "<div class='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4'>Preencha os campos obrigatórios.</div>";
+    if ($inclusao_rapida) {
+        // Processamento simplificado para inclusão rápida
+        $guia_paciente = trim($_POST['guia_paciente']);
+        
+        function formatCurrency($val) {
+            $val = str_replace('.', '', $val);
+            $val = str_replace(',', '.', $val);
+            return $val ?: 0;
+        }
+        
+        $valor_total_db = formatCurrency($_POST['valor_total']);
+        
+        if (empty($guia_paciente) || $valor_total_db <= 0) {
+            $mensagem = "<div class='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4'>Preencha o número da guia e o valor final.</div>";
+        } else {
+            try {
+                // Inserir atendimento com dados mínimos
+                $sql = "INSERT INTO pa_ambulatorio 
+                        (data_recebimento, setor, convenio_id, guia_paciente, valor_inicial, valor_retirado, 
+                         valor_acrescentado, valor_total, valor_glosado, valor_aceito, valor_faturado, 
+                         falta_nf, status, observacoes)
+                        VALUES (NOW(), 'PA', 1, ?, 0, 0, 0, ?, 0, 0, ?, 'Não', 'Em Aberto', 'Inclusão rápida')";
+                
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([$guia_paciente, $valor_total_db, $valor_total_db]);
+                
+                $novo_id = $pdo->lastInsertId();
+                
+                // Registrar log
+                registrarLog($pdo, null, 'INCLUSAO_RAPIDA_PA', "Atendimento PA incluído rapidamente - Guia: $guia_paciente", null, [
+                    'guia_paciente' => $guia_paciente,
+                    'valor_total' => $valor_total_db
+                ]);
+                
+                $mensagem = "<div class='bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4'>Atendimento incluído com sucesso!</div>";
+                echo "<script>setTimeout(function(){ window.location.href = 'pa_ambulatorio.php'; }, 1500);</script>";
+            } catch (PDOException $e) {
+                $mensagem = "<div class='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4'>Erro ao inserir: " . $e->getMessage() . "</div>";
+            }
+        }
     } else {
-        try {
-            if ($id) {
-                // Buscar valores anteriores para o log
-                $stmt_anterior = $pdo->prepare("SELECT * FROM pa_ambulatorio WHERE id = ?");
-                $stmt_anterior->execute([$id]);
-                $valores_anteriores = $stmt_anterior->fetch(PDO::FETCH_ASSOC);
+        // Processamento normal
+        $data_recebimento = $_POST['data_recebimento'];
+        $competencia = !empty($_POST['competencia']) ? $_POST['competencia'] . '-01' : null;
+        $setor = $_POST['setor'];
+        $convenio_id = $_POST['convenio_id'];
+        $guia_paciente = $_POST['guia_paciente'];
+        $data_entrada = !empty($_POST['data_entrada']) ? $_POST['data_entrada'] : null;
+        $data_saida = !empty($_POST['data_saida']) ? $_POST['data_saida'] : null;
+        
+        // Helper function to format currency
+        function formatCurrency($val) {
+            $val = str_replace('.', '', $val);
+            $val = str_replace(',', '.', $val);
+            return $val ?: 0;
+        }
+
+        $valor_inicial_db = formatCurrency($_POST['valor_inicial']);
+        $valor_retirado_db = formatCurrency($_POST['valor_retirado']);
+        $valor_acrescentado_db = formatCurrency($_POST['valor_acrescentado']);
+        $valor_total_db = formatCurrency($_POST['valor_total']);
+        $valor_glosado_db = formatCurrency($_POST['valor_glosado']);
+        $valor_aceito_db = formatCurrency($_POST['valor_aceito']);
+        $valor_faturado_db = formatCurrency($_POST['valor_faturado']);
+
+        $falta_nf = $_POST['falta_nf'];
+        $status = $_POST['status'];
+        $observacoes = $_POST['observacoes'];
+
+        if (empty($data_recebimento) || empty($setor) || empty($convenio_id)) {
+            $mensagem = "<div class='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4'>Preencha os campos obrigatórios.</div>";
+        } else {
+            try {
+                if ($id) {
+                    // Buscar valores anteriores para o log
+                    $stmt_anterior = $pdo->prepare("SELECT * FROM pa_ambulatorio WHERE id = ?");
+                    $stmt_anterior->execute([$id]);
+                    $valores_anteriores = $stmt_anterior->fetch(PDO::FETCH_ASSOC);
                 
                 $sql = "UPDATE pa_ambulatorio SET data_recebimento=?, competencia=?, setor=?, convenio_id=?, guia_paciente=?, data_entrada=?, data_saida=?, valor_inicial=?, valor_retirado=?, valor_acrescentado=?, valor_total=?, valor_glosado=?, valor_aceito=?, valor_faturado=?, falta_nf=?, status=?, observacoes=? WHERE id=?";
                 $stmt = $pdo->prepare($sql);
@@ -213,6 +258,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         } catch (PDOException $e) {
             $mensagem = "<div class='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4'>Erro ao salvar: " . $e->getMessage() . "</div>";
+        }
         }
     }
 }

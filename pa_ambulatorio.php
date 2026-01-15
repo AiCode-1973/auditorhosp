@@ -127,6 +127,26 @@ try {
         </form>
     </div>
 
+    <?php if ($filtro_guia && count($atendimentos) == 0): ?>
+        <!-- Mensagem de Guia Não Encontrada -->
+        <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-md shadow">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <svg class="h-6 w-6 text-red-500 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <span class="text-red-700 font-bold text-lg">Guia não corrigida</span>
+                </div>
+                <button onclick="abrirModalInclusaoRapida('<?php echo htmlspecialchars($filtro_guia); ?>')" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-md transition duration-150 ease-in-out flex items-center gap-2">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Incluir
+                </button>
+            </div>
+        </div>
+    <?php endif; ?>
+
     <!-- Tabela -->
     <div class="bg-white shadow-md rounded-lg overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
@@ -288,6 +308,69 @@ try {
         const modal = document.getElementById('modalObservacao');
         modal.classList.add('hidden');
     }
+
+    function abrirModalInclusaoRapida(guia) {
+        document.getElementById('modal_guia').value = guia;
+        document.getElementById('modal_valor').value = '';
+        document.getElementById('modalInclusaoRapida').classList.remove('hidden');
+    }
+
+    function fecharModalInclusaoRapida() {
+        document.getElementById('modalInclusaoRapida').classList.add('hidden');
+    }
+
+    function formatMoney(input) {
+        let value = input.value.replace(/\D/g, '');
+        value = (value / 100).toFixed(2) + '';
+        value = value.replace(".", ",");
+        value = value.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
+        input.value = value;
+    }
 </script>
+
+<!-- Modal de Inclusão Rápida -->
+<div id="modalInclusaoRapida" class="fixed z-50 inset-0 overflow-y-auto hidden" style="background-color: rgba(0,0,0,0.5);">
+    <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <form method="POST" action="pa_ambulatorio_form.php">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-green-100 sm:mx-0 sm:h-10 sm:w-10">
+                            <svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            </svg>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900">Inclusão Rápida de Atendimento</h3>
+                            <div class="mt-4 space-y-4">
+                                <!-- Guia -->
+                                <div>
+                                    <label for="modal_guia" class="block text-sm font-medium text-gray-700 mb-1">Número da Guia *</label>
+                                    <input type="text" name="guia_paciente" id="modal_guia" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" required>
+                                </div>
+                                
+                                <!-- Valor Final -->
+                                <div>
+                                    <label for="modal_valor" class="block text-sm font-medium text-gray-700 mb-1">Valor Final (R$) *</label>
+                                    <input type="text" name="valor_total" id="modal_valor" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 text-right" onkeyup="formatMoney(this)" required>
+                                </div>
+
+                                <input type="hidden" name="inclusao_rapida" value="1">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-2">
+                    <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        Incluir Atendimento
+                    </button>
+                    <button type="button" onclick="fecharModalInclusaoRapida()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:mt-0 sm:w-auto sm:text-sm">
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 <?php include 'includes/footer.php'; ?>
