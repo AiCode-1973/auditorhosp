@@ -15,7 +15,7 @@ $anexos_existentes = [];
 // Carregar dados se for ediÃ§Ã£o
 if ($id) {
     try {
-        $stmt = $pdo->prepare("SELECT * FROM Documento de Internaçãos_internacao WHERE id = ?");
+        $stmt = $pdo->prepare("SELECT * FROM documentos_internacao WHERE id = ?");
         $stmt->execute([$id]);
         $doc = $stmt->fetch(PDO::FETCH_ASSOC);
         
@@ -26,7 +26,7 @@ if ($id) {
             $observacoes = $doc['observacoes'];
             
             // Buscar anexos existentes
-            $stmt_anexos = $pdo->prepare("SELECT * FROM Documento de Internaçãos_internacao_anexos WHERE Documento de Internação_id = ? ORDER BY created_at DESC");
+            $stmt_anexos = $pdo->prepare("SELECT * FROM documentos_internacao_anexos WHERE documento_id = ? ORDER BY created_at DESC");
             $stmt_anexos->execute([$id]);
             $anexos_existentes = $stmt_anexos->fetchAll(PDO::FETCH_ASSOC);
         }
@@ -55,22 +55,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         try {
             if ($id) {
-                // Atualizar Documento de Internação
-                $sql = "UPDATE Documento de Internaçãos_internacao SET data_cadastro=?, competencia=?, convenio_id=?, observacoes=? WHERE id=?";
+                // Atualizar documento
+                $sql = "UPDATE documentos_internacao SET data_cadastro=?, competencia=?, convenio_id=?, observacoes=? WHERE id=?";
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute([$data_cadastro, $competencia, $convenio_id, $observacoes, $id]);
-                $Documento de Internação_id = $id;
+                $documento_id = $id;
             } else {
-                // Inserir novo Documento de Internação
-                $sql = "INSERT INTO Documento de Internaçãos_internacao (data_cadastro, competencia, convenio_id, observacoes) VALUES (?, ?, ?, ?)";
+                // Inserir novo documento
+                $sql = "INSERT INTO documentos_internacao (data_cadastro, competencia, convenio_id, observacoes) VALUES (?, ?, ?, ?)";
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute([$data_cadastro, $competencia, $convenio_id, $observacoes]);
-                $Documento de Internação_id = $pdo->lastInsertId();
+                $documento_id = $pdo->lastInsertId();
             }
             
             // Processar uploads de arquivos
             if (!empty($_FILES['anexos']['name'][0])) {
-                $upload_dir = 'uploads/Documento de Internaçãos_internacao/';
+                $upload_dir = 'uploads/documentos_internacao/';
                 if (!file_exists($upload_dir)) {
                     mkdir($upload_dir, 0777, true);
                 }
@@ -87,21 +87,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $tamanho = $_FILES['anexos']['size'][$i];
                             $tipo = $_FILES['anexos']['type'][$i];
                             
-                            $sql_anexo = "INSERT INTO Documento de Internaçãos_internacao_anexos (Documento de Internação_id, nome_arquivo, caminho_arquivo, tamanho_arquivo, tipo_arquivo) VALUES (?, ?, ?, ?, ?)";
+                            $sql_anexo = "INSERT INTO documentos_internacao_anexos (documento_id, nome_arquivo, caminho_arquivo, tamanho_arquivo, tipo_arquivo) VALUES (?, ?, ?, ?, ?)";
                             $stmt_anexo = $pdo->prepare($sql_anexo);
-                            $stmt_anexo->execute([$Documento de Internação_id, $nome_original, $caminho_destino, $tamanho, $tipo]);
+                            $stmt_anexo->execute([$documento_id, $nome_original, $caminho_destino, $tamanho, $tipo]);
                         }
                     }
                 }
             }
             
-            $mensagem = "<div class='bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4'>Documento de Internação salvo com sucesso!</div>";
+            $mensagem = "<div class='bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4'>Documento salvo com sucesso!</div>";
             
             if (!$id) {
-                echo "<script>setTimeout(function(){ window.location.href = 'Documento de Internaçãos_internacao.php'; }, 1500);</script>";
+                echo "<script>setTimeout(function(){ window.location.href = 'documentos_internacao.php'; }, 1500);</script>";
             } else {
                 // Recarregar anexos
-                $stmt_anexos = $pdo->prepare("SELECT * FROM Documento de Internaçãos_internacao_anexos WHERE Documento de Internação_id = ? ORDER BY created_at DESC");
+                $stmt_anexos = $pdo->prepare("SELECT * FROM documentos_internacao_anexos WHERE documento_id = ? ORDER BY created_at DESC");
                 $stmt_anexos->execute([$id]);
                 $anexos_existentes = $stmt_anexos->fetchAll(PDO::FETCH_ASSOC);
             }
@@ -115,8 +115,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <div class="container mx-auto px-4 py-6 max-w-4xl">
     <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold text-gray-800"><?php echo $id ? 'Editar' : 'Novo'; ?> Documento de Internação</h1>
-        <a href="Documento de Internaçãos_internacao.php" class="text-blue-600 hover:text-blue-800 font-medium">Voltar para Lista</a>
+        <h1 class="text-2xl font-bold text-gray-800"><?php echo $id ? 'Editar' : 'Novo'; ?> Documento de InternaÃ§Ã£o</h1>
+        <a href="documentos_internacao.php" class="text-blue-600 hover:text-blue-800 font-medium">Voltar para Lista</a>
     </div>
 
     <?php echo $mensagem; ?>
@@ -189,7 +189,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                         </svg>
                                     </a>
-                                    <a href="excluir_anexo_Documento de Internação_internacao.php?id=<?php echo $anexo['id']; ?>&doc_id=<?php echo $id; ?>" onclick="return confirm('Deseja excluir este anexo?');" class="text-red-600 hover:text-red-800" title="Excluir">
+                                    <a href="excluir_anexo_documento_internacao.php?id=<?php echo $anexo['id']; ?>&doc_id=<?php echo $id; ?>" onclick="return confirm('Deseja excluir este anexo?');" class="text-red-600 hover:text-red-800" title="Excluir">
                                         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                         </svg>
@@ -202,7 +202,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
 
             <div class="flex justify-end gap-4">
-                <a href="Documento de Internaçãos_internacao.php" class="bg-gray-500 text-white font-bold py-2 px-6 rounded hover:bg-gray-600 transition duration-150">
+                <a href="documentos_internacao.php" class="bg-gray-500 text-white font-bold py-2 px-6 rounded hover:bg-gray-600 transition duration-150">
                     Cancelar
                 </a>
                 <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-6 rounded hover:bg-blue-700 transition duration-150">

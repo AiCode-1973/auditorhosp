@@ -5,156 +5,152 @@ include 'includes/header.php';
 $id = isset($_GET['id']) ? $_GET['id'] : null;
 
 if (!$id) {
-    header("Location: Documento de Internaçãos_internacao.php");
+    header('Location: documentos_internacao.php');
     exit;
 }
 
 try {
-    // Buscar dados do Documento de Internação
-    $stmt = $pdo->prepare("
-        SELECT d.*, c.nome_convenio 
-        FROM Documento de Internaçãos_internacao d
-        JOIN convenios c ON d.convenio_id = c.id
-        WHERE d.id = ?
-    ");
+    // Buscar documento
+    $stmt = $pdo->prepare("SELECT d.*, c.nome_convenio 
+                           FROM documentos_internacao d
+                           LEFT JOIN convenios c ON d.convenio_id = c.id
+                           WHERE d.id = ?");
     $stmt->execute([$id]);
-    $Documento de Internação = $stmt->fetch(PDO::FETCH_ASSOC);
+    $doc = $stmt->fetch(PDO::FETCH_ASSOC);
     
-    if (!$Documento de Internação) {
-        header("Location: Documento de Internaçãos_internacao.php");
+    if (!$doc) {
+        header('Location: documentos_internacao.php');
         exit;
     }
     
     // Buscar anexos
-    $stmt_anexos = $pdo->prepare("SELECT * FROM Documento de Internaçãos_internacao_anexos WHERE Documento de Internação_id = ? ORDER BY created_at DESC");
+    $stmt_anexos = $pdo->prepare("SELECT * FROM documentos_internacao_anexos WHERE documento_id = ? ORDER BY created_at DESC");
     $stmt_anexos->execute([$id]);
     $anexos = $stmt_anexos->fetchAll(PDO::FETCH_ASSOC);
     
 } catch (PDOException $e) {
-    $erro = "Erro ao carregar Documento de Internação: " . $e->getMessage();
+    die("Erro: " . $e->getMessage());
+}
+
+// FunÃ§Ã£o para obter Ã­cone e cor baseado na extensÃ£o do arquivo
+function getFileIcon($filename) {
+    $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+    
+    $icons = [
+        'pdf' => ['color' => 'text-red-600', 'icon' => 'M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z'],
+        'doc' => ['color' => 'text-blue-600', 'icon' => 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'],
+        'docx' => ['color' => 'text-blue-600', 'icon' => 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'],
+        'xls' => ['color' => 'text-green-600', 'icon' => 'M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2'],
+        'xlsx' => ['color' => 'text-green-600', 'icon' => 'M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2'],
+        'jpg' => ['color' => 'text-purple-600', 'icon' => 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z'],
+        'jpeg' => ['color' => 'text-purple-600', 'icon' => 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z'],
+        'png' => ['color' => 'text-purple-600', 'icon' => 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z'],
+    ];
+    
+    return $icons[$ext] ?? ['color' => 'text-gray-600', 'icon' => 'M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z'];
 }
 ?>
 
-<div class="container mx-auto px-4 py-6 max-w-5xl">
+<div class="container mx-auto px-4 py-6 max-w-6xl">
     <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold text-gray-800">Visualizar Documento de Internação</h1>
-        <a href="Documento de Internaçãos_internacao.php" class="text-blue-600 hover:text-blue-800 font-medium">Voltar para Lista</a>
+        <h1 class="text-2xl font-bold text-gray-800">Visualizar Documento de InternaÃ§Ã£o</h1>
+        <div class="flex gap-2">
+            <a href="documentos_internacao_form.php?id=<?php echo $id; ?>" class="bg-blue-600 text-white font-bold py-2 px-6 rounded hover:bg-blue-700 transition duration-150">
+                Editar
+            </a>
+            <a href="documentos_internacao.php" class="bg-gray-500 text-white font-bold py-2 px-6 rounded hover:bg-gray-600 transition duration-150">
+                Voltar
+            </a>
+        </div>
     </div>
 
-    <?php if (isset($erro)): ?>
-        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            <?php echo $erro; ?>
-        </div>
-    <?php else: ?>
-        <!-- Dados do Documento de Internação -->
-        <div class="bg-white shadow-md rounded-lg p-6 mb-6">
-            <h2 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-2">InformaÃ§Ãµes do Documento de Internação</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <label class="block text-sm font-medium text-gray-500 mb-1">Data</label>
-                    <p class="text-base text-gray-900"><?php echo date('d/m/Y', strtotime($Documento de Internação['data_cadastro'])); ?></p>
-                </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- InformaÃ§Ãµes do Documento -->
+        <div class="md:col-span-1">
+            <div class="bg-white shadow-md rounded-lg p-6">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4">InformaÃ§Ãµes</h2>
                 
-                <div>
-                    <label class="block text-sm font-medium text-gray-500 mb-1">CompetÃªncia</label>
-                    <p class="text-base text-gray-900"><?php echo date('m/Y', strtotime($Documento de Internação['competencia'])); ?></p>
-                </div>
-                
-                <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-500 mb-1">ConvÃªnio</label>
-                    <p class="text-base text-gray-900 font-semibold"><?php echo htmlspecialchars($Documento de Internação['nome_convenio']); ?></p>
-                </div>
-                
-                <?php if (!empty($Documento de Internação['observacoes'])): ?>
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-500 mb-1">ObservaÃ§Ãµes</label>
-                        <p class="text-base text-gray-900 whitespace-pre-wrap"><?php echo htmlspecialchars($Documento de Internação['observacoes']); ?></p>
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-sm font-medium text-gray-500">Data</label>
+                        <p class="text-gray-900"><?php echo date('d/m/Y', strtotime($doc['data_cadastro'])); ?></p>
                     </div>
-                <?php endif; ?>
+                    
+                    <div>
+                        <label class="text-sm font-medium text-gray-500">CompetÃªncia</label>
+                        <p class="text-gray-900"><?php echo date('m/Y', strtotime($doc['competencia'])); ?></p>
+                    </div>
+                    
+                    <div>
+                        <label class="text-sm font-medium text-gray-500">ConvÃªnio</label>
+                        <p class="text-gray-900"><?php echo htmlspecialchars($doc['nome_convenio']); ?></p>
+                    </div>
+                    
+                    <?php if ($doc['observacoes']): ?>
+                    <div>
+                        <label class="text-sm font-medium text-gray-500">ObservaÃ§Ãµes</label>
+                        <p class="text-gray-900 text-sm"><?php echo nl2br(htmlspecialchars($doc['observacoes'])); ?></p>
+                    </div>
+                    <?php endif; ?>
+                    
+                    <div>
+                        <label class="text-sm font-medium text-gray-500">Total de Anexos</label>
+                        <p class="text-gray-900"><?php echo count($anexos); ?> arquivo(s)</p>
+                    </div>
+                    
+                    <div>
+                        <label class="text-sm font-medium text-gray-500">Criado em</label>
+                        <p class="text-gray-900 text-sm"><?php echo date('d/m/Y H:i', strtotime($doc['created_at'])); ?></p>
+                    </div>
+                </div>
             </div>
         </div>
 
         <!-- Anexos -->
-        <div class="bg-white shadow-md rounded-lg p-6">
-            <div class="flex justify-between items-center mb-4 border-b pb-2">
-                <h2 class="text-xl font-semibold text-gray-800">Anexos (<?php echo count($anexos); ?>)</h2>
-                <a href="Documento de Internaçãos_internacao_form.php?id=<?php echo $id; ?>" class="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1">
-                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                    Adicionar Anexo
-                </a>
-            </div>
-            
-            <?php if (empty($anexos)): ?>
-                <div class="text-center py-8 text-gray-500">
-                    <svg class="h-16 w-16 mx-auto mb-3 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <p>Nenhum anexo cadastrado</p>
-                </div>
-            <?php else: ?>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <?php foreach ($anexos as $anexo): ?>
-                        <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                            <div class="flex items-start gap-3">
-                                <div class="flex-shrink-0">
-                                    <?php 
-                                    $extensao = strtolower(pathinfo($anexo['nome_arquivo'], PATHINFO_EXTENSION));
-                                    $icone_cor = 'text-gray-400';
-                                    if (in_array($extensao, ['pdf'])) $icone_cor = 'text-red-500';
-                                    elseif (in_array($extensao, ['doc', 'docx'])) $icone_cor = 'text-blue-500';
-                                    elseif (in_array($extensao, ['xls', 'xlsx'])) $icone_cor = 'text-green-500';
-                                    elseif (in_array($extensao, ['jpg', 'jpeg', 'png', 'gif'])) $icone_cor = 'text-purple-500';
-                                    ?>
-                                    <svg class="h-10 w-10 <?php echo $icone_cor; ?>" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+        <div class="md:col-span-2">
+            <div class="bg-white shadow-md rounded-lg p-6">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4">Anexos</h2>
+                
+                <?php if (count($anexos) > 0): ?>
+                    <div class="grid grid-cols-1 gap-4">
+                        <?php foreach ($anexos as $anexo): 
+                            $fileInfo = getFileIcon($anexo['nome_arquivo']);
+                        ?>
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:shadow-md transition duration-150">
+                                <div class="flex items-center gap-4 flex-1">
+                                    <svg class="h-8 w-8 <?php echo $fileInfo['color']; ?>" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="<?php echo $fileInfo['icon']; ?>" />
                                     </svg>
+                                    <div class="flex-1">
+                                        <p class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($anexo['nome_arquivo']); ?></p>
+                                        <p class="text-xs text-gray-500">
+                                            <?php echo number_format($anexo['tamanho_arquivo'] / 1024, 2); ?> KB â€¢ 
+                                            <?php echo date('d/m/Y H:i', strtotime($anexo['created_at'])); ?>
+                                        </p>
+                                    </div>
                                 </div>
-                                <div class="flex-1 min-w-0">
-                                    <p class="text-sm font-medium text-gray-900 truncate" title="<?php echo htmlspecialchars($anexo['nome_arquivo']); ?>">
-                                        <?php echo htmlspecialchars($anexo['nome_arquivo']); ?>
-                                    </p>
-                                    <div class="flex items-center gap-3 mt-1 text-xs text-gray-500">
-                                        <span><?php echo number_format($anexo['tamanho_arquivo'] / 1024, 2); ?> KB</span>
-                                        <span>â€¢</span>
-                                        <span><?php echo strtoupper($extensao); ?></span>
-                                        <span>â€¢</span>
-                                        <span><?php echo date('d/m/Y H:i', strtotime($anexo['created_at'])); ?></span>
-                                    </div>
-                                    <div class="flex gap-2 mt-3">
-                                        <a href="<?php echo $anexo['caminho_arquivo']; ?>" target="_blank" class="inline-flex items-center px-3 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded hover:bg-blue-200 transition-colors">
-                                            <svg class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                            </svg>
-                                            Visualizar
-                                        </a>
-                                        <a href="<?php echo $anexo['caminho_arquivo']; ?>" download class="inline-flex items-center px-3 py-1 text-xs font-medium text-green-700 bg-green-100 rounded hover:bg-green-200 transition-colors">
-                                            <svg class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                            </svg>
-                                            Baixar
-                                        </a>
-                                    </div>
+                                <div class="flex gap-2">
+                                    <a href="<?php echo $anexo['caminho_arquivo']; ?>" target="_blank" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition duration-150 text-sm font-medium">
+                                        Visualizar
+                                    </a>
+                                    <a href="<?php echo $anexo['caminho_arquivo']; ?>" download class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition duration-150 text-sm font-medium">
+                                        Download
+                                    </a>
                                 </div>
                             </div>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </div>
+                <?php else: ?>
+                    <div class="text-center py-8">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <p class="mt-2 text-gray-500">Nenhum anexo encontrado</p>
+                    </div>
+                <?php endif; ?>
+            </div>
         </div>
-
-        <!-- BotÃµes de AÃ§Ã£o -->
-        <div class="flex justify-end gap-3 mt-6">
-            <a href="Documento de Internaçãos_internacao.php" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition duration-150">
-                Voltar
-            </a>
-            <a href="Documento de Internaçãos_internacao_form.php?id=<?php echo $id; ?>" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition duration-150">
-                Editar Documento de Internação
-            </a>
-        </div>
-    <?php endif; ?>
+    </div>
 </div>
 
 <?php include 'includes/footer.php'; ?>

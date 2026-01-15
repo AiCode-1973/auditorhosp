@@ -1,5 +1,4 @@
 <?php
-require_once 'auth.php';
 require_once 'db_config.php';
 
 $id = isset($_GET['id']) ? $_GET['id'] : null;
@@ -13,24 +12,22 @@ if ($id && $doc_id) {
         $anexo = $stmt->fetch(PDO::FETCH_ASSOC);
         
         if ($anexo) {
-            // Deletar arquivo físico
+            // Excluir arquivo físico
             if (file_exists($anexo['caminho_arquivo'])) {
                 unlink($anexo['caminho_arquivo']);
             }
             
-            // Deletar registro do banco
+            // Excluir registro do banco
             $stmt = $pdo->prepare("DELETE FROM documentos_internacao_anexos WHERE id = ?");
             $stmt->execute([$id]);
         }
         
-        header("Location: documentos_internacao_form.php?id=" . $doc_id);
-        exit;
+        header('Location: documentos_internacao_form.php?id=' . $doc_id);
     } catch (PDOException $e) {
-        header("Location: documentos_internacao_form.php?id=" . $doc_id . "&erro=" . urlencode($e->getMessage()));
-        exit;
+        header('Location: documentos_internacao_form.php?id=' . $doc_id . '&erro=' . urlencode($e->getMessage()));
     }
 } else {
-    header("Location: documentos_internacao.php");
-    exit;
+    header('Location: documentos_internacao.php');
 }
+exit;
 ?>
