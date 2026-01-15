@@ -8,6 +8,15 @@ $filtro_guia = isset($_GET['filtro_guia']) ? $_GET['filtro_guia'] : '';
 $filtro_status = isset($_GET['filtro_status']) ? $_GET['filtro_status'] : '';
 $filtro_competencia = isset($_GET['filtro_competencia']) ? $_GET['filtro_competencia'] : '';
 
+// Paginação
+$registros_por_pagina = isset($_GET['por_pagina']) ? (int)$_GET['por_pagina'] : 10;
+if (!in_array($registros_por_pagina, [5, 10, 20, 30, 50])) {
+    $registros_por_pagina = 10;
+}
+$pagina_atual = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
+if ($pagina_atual < 1) $pagina_atual = 1;
+$offset = ($pagina_atual - 1) * $registros_por_pagina;
+
 // Construção da query
 $where_clauses = [];
 $params = [];
@@ -38,6 +47,19 @@ if (count($where_clauses) > 0) {
 }
 
 try {
+    // Contar total de registros
+    $sql_count = "
+        SELECT COUNT(*) as total
+        FROM pa_ambulatorio p
+        JOIN convenios c ON p.convenio_id = c.id
+        $where_sql
+    ";
+    $stmt_count = $pdo->prepare($sql_count);
+    $stmt_count->execute($params);
+    $total_registros = $stmt_count->fetch(PDO::FETCH_ASSOC)['total'];
+    $total_paginas = ceil($total_registros / $registros_por_pagina);
+
+    // Buscar registros da página atual
     $sql = "
         SELECT 
             p.*, 
@@ -46,31 +68,41 @@ try {
         JOIN convenios c ON p.convenio_id = c.id
         $where_sql
         ORDER BY p.data_recebimento ASC, p.id ASC
+        LIMIT $registros_por_pagina OFFSET $offset
     ";
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
     $atendimentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Calcular totais
-    $total_inicial = 0;
-    $total_retirado = 0;
-    $total_acrescentado = 0;
-    $total_final = 0;
-    $total_glosado = 0;
-    $total_aceito = 0;
-    $total_faturado = 0;
-
-    foreach ($atendimentos as $at) {
-        $total_inicial += $at['valor_inicial'];
-        $total_retirado += $at['valor_retirado'];
-        $total_acrescentado += $at['valor_acrescentado'];
-        $total_final += $at['valor_total'];
-        $total_glosado += $at['valor_glosado'];
-        $total_aceito += $at['valor_aceito'];
-        $total_faturado += $at['valor_faturado'];
-    }
+    // Calcular totais (de todos os registros, não só da página atual)
+    $sql_totais = "
+        SELECT 
+            SUM(p.valor_inicial) as total_inicial,
+            SUM(p.valor_retirado) as total_retirado,
+            SUM(p.valor_acrescentado) as total_acrescentado,
+            SUM(p.valor_total) as total_final,
+            SUM(p.valor_glosado) as total_glosado,
+            SUM(p.valor_aceito) as total_aceito,
+            SUM(p.valor_faturado) as total_faturado
+        FROM pa_ambulatorio p
+        JOIN convenios c ON p.convenio_id = c.id
+        $where_sql
+    ";
+    $stmt_totais = $pdo->prepare($sql_totais);
+    $stmt_totais->execute($params);
+    $totais = $stmt_totais->fetch(PDO::FETCH_ASSOC);
+    
+    $total_inicial = $totais['total_inicial'] ?? 0;
+    $total_retirado = $totais['total_retirado'] ?? 0;
+    $total_acrescentado = $totais['total_acrescentado'] ?? 0;
+    $total_final = $totais['total_final'] ?? 0;
+    $total_glosado = $totais['total_glosado'] ?? 0;
+    $total_aceito = $totais['total_aceito'] ?? 0;
+    $total_faturado = $totais['total_faturado'] ?? 0;
 } catch (PDOException $e) {
     $atendimentos = [];
+    $total_registros = 0;
+    $total_paginas = 0;
     echo "<div class='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4' role='alert'>Erro ao carregar dados: " . $e->getMessage() . "</div>";
 }
 ?>
@@ -146,6 +178,51 @@ try {
             </div>
         </div>
     <?php endif; ?>
+
+    <!-- Controles de Paginação -->
+    <div class="bg-white p-4 rounded-lg shadow border border-gray-200 mb-4">
+        <div class="flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2">
+                    <label for="por_pagina" class="text-sm font-medium text-gray-700">Registros por página:</label>
+                    <select name="por_pagina" id="por_pagina" onchange="mudarRegistrosPorPagina(this.value)" class="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="5" <?php echo $registros_por_pagina == 5 ? 'selected' : ''; ?>>5</option>
+                        <option value="10" <?php echo $registros_por_pagina == 10 ? 'selected' : ''; ?>>10</option>
+                        <option value="20" <?php echo $registros_por_pagina == 20 ? 'selected' : ''; ?>>20</option>
+                        <option value="30" <?php echo $registros_por_pagina == 30 ? 'selected' : ''; ?>>30</option>
+                        <option value="50" <?php echo $registros_por_pagina == 50 ? 'selected' : ''; ?>>50</option>
+                    </select>
+                </div>
+                <div class="text-sm text-gray-600">
+                    Mostrando <?php echo min($offset + 1, $total_registros); ?> a <?php echo min($offset + $registros_por_pagina, $total_registros); ?> de <?php echo $total_registros; ?> registros
+                </div>
+            </div>
+
+            <?php if ($total_paginas > 1): ?>
+                <div class="flex items-center gap-2">
+                    <?php if ($pagina_atual > 1): ?>
+                        <a href="?<?php echo http_build_query(array_merge($_GET, ['pagina' => 1])); ?>" class="px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50">Primeira</a>
+                        <a href="?<?php echo http_build_query(array_merge($_GET, ['pagina' => $pagina_atual - 1])); ?>" class="px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50">Anterior</a>
+                    <?php endif; ?>
+
+                    <?php
+                    $inicio = max(1, $pagina_atual - 2);
+                    $fim = min($total_paginas, $pagina_atual + 2);
+                    for ($i = $inicio; $i <= $fim; $i++):
+                    ?>
+                        <a href="?<?php echo http_build_query(array_merge($_GET, ['pagina' => $i])); ?>" class="px-3 py-1 border rounded-md text-sm <?php echo $i == $pagina_atual ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 text-gray-700 hover:bg-gray-50'; ?>">
+                            <?php echo $i; ?>
+                        </a>
+                    <?php endfor; ?>
+
+                    <?php if ($pagina_atual < $total_paginas): ?>
+                        <a href="?<?php echo http_build_query(array_merge($_GET, ['pagina' => $pagina_atual + 1])); ?>" class="px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50">Próxima</a>
+                        <a href="?<?php echo http_build_query(array_merge($_GET, ['pagina' => $total_paginas])); ?>" class="px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50">Última</a>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
 
     <!-- Tabela -->
     <div class="bg-white shadow-md rounded-lg overflow-x-auto">
@@ -325,6 +402,13 @@ try {
         value = value.replace(".", ",");
         value = value.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
         input.value = value;
+    }
+
+    function mudarRegistrosPorPagina(quantidade) {
+        const params = new URLSearchParams(window.location.search);
+        params.set('por_pagina', quantidade);
+        params.set('pagina', '1'); // Resetar para primeira página
+        window.location.href = '?' + params.toString();
     }
 </script>
 
