@@ -296,7 +296,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <!-- Data Recebimento -->
                 <div class="col-span-2 md:col-span-1">
                     <label for="data_recebimento" class="block text-sm font-medium text-gray-700 mb-1">Data Recebimento *</label>
-                    <input type="date" name="data_recebimento" id="data_recebimento" value="<?php echo $data_recebimento; ?>" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 <?php echo $is_nc_edit ? 'bg-gray-100' : ''; ?>" <?php echo $is_nc_edit ? 'disabled' : 'required'; ?>>
+                    <input type="date" name="data_recebimento" id="data_recebimento" value="<?php echo $data_recebimento; ?>" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 <?php echo $is_nc_edit ? 'bg-gray-100' : ''; ?>" <?php echo $is_nc_edit ? 'readonly' : 'required'; ?>>
                 </div>
 
                 <!-- Setor -->
@@ -332,25 +332,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <!-- Data Entrada -->
                 <div>
                     <label for="data_entrada" class="block text-sm font-medium text-gray-700 mb-1">Data Entrada</label>
-                    <input type="date" name="data_entrada" id="data_entrada" value="<?php echo $data_entrada; ?>" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 <?php echo $is_nc_edit ? 'bg-gray-100' : ''; ?>" <?php echo $is_nc_edit ? 'disabled' : ''; ?>>
+                    <input type="date" name="data_entrada" id="data_entrada" value="<?php echo $data_entrada; ?>" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 <?php echo $is_nc_edit ? 'bg-gray-100' : ''; ?>" <?php echo $is_nc_edit ? 'readonly' : ''; ?>>
                 </div>
 
                 <!-- Data Saída -->
                 <div>
                     <label for="data_saida" class="block text-sm font-medium text-gray-700 mb-1">Data Saída</label>
-                    <input type="date" name="data_saida" id="data_saida" value="<?php echo $data_saida; ?>" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 <?php echo $is_nc_edit ? 'bg-gray-100' : ''; ?>" <?php echo $is_nc_edit ? 'disabled' : ''; ?>>
+                    <input type="date" name="data_saida" id="data_saida" value="<?php echo $data_saida; ?>" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 <?php echo $is_nc_edit ? 'bg-gray-100' : ''; ?>" <?php echo $is_nc_edit ? 'readonly' : ''; ?>>
                 </div>
 
                 <!-- Valor Inicial -->
                 <div>
                     <label for="valor_inicial" class="block text-sm font-medium text-gray-700 mb-1">Valor Inicial (R$)</label>
-                    <input type="text" name="valor_inicial" id="valor_inicial" value="<?php echo $valor_inicial; ?>" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 <?php echo $is_nc_edit ? 'bg-gray-100' : ''; ?>" placeholder="0,00" onkeyup="formatarMoeda(this); calcularAcrescentado();" <?php echo $is_nc_edit ? 'disabled' : ''; ?>>
+                    <input type="text" name="valor_inicial" id="valor_inicial" value="<?php echo $valor_inicial; ?>" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 <?php echo $is_nc_edit ? 'bg-gray-100' : ''; ?>" placeholder="0,00" onkeyup="formatarMoeda(this); calcularAcrescentado();" <?php echo $is_nc_edit ? 'readonly' : ''; ?>>
                 </div>
 
                 <!-- Valor Retirado -->
                 <div>
                     <label for="valor_retirado" class="block text-sm font-medium text-gray-700 mb-1">Valor Retirado (R$)</label>
-                    <input type="text" name="valor_retirado" id="valor_retirado" value="<?php echo $valor_retirado; ?>" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-red-600 <?php echo $is_nc_edit ? 'bg-gray-100' : ''; ?>" placeholder="0,00" onkeyup="formatarMoeda(this); calcularAcrescentado();" <?php echo $is_nc_edit ? 'disabled' : ''; ?>>
+                    <input type="text" name="valor_retirado" id="valor_retirado" value="<?php echo $valor_retirado; ?>" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-red-600 <?php echo $is_nc_edit ? 'bg-gray-100' : ''; ?>" placeholder="0,00" onkeyup="formatarMoeda(this); calcularAcrescentado();" <?php echo $is_nc_edit ? 'readonly' : ''; ?>>
                 </div>
 
                 <!-- Valor Total -->
@@ -386,7 +386,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <!-- Falta NF -->
                 <div>
                     <label for="falta_nf" class="block text-sm font-medium text-gray-700 mb-1">Falta NF?</label>
-                    <select name="falta_nf" id="falta_nf" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 <?php echo $is_nc_edit ? 'bg-gray-100' : ''; ?>" <?php echo $is_nc_edit ? 'disabled' : ''; ?>>
+                    <select name="falta_nf" id="falta_nf" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 <?php echo $is_nc_edit ? 'bg-gray-100 pointer-events-none' : ''; ?>">
                         <option value="Não" <?php echo $falta_nf == 'Não' ? 'selected' : ''; ?>>Não</option>
                         <option value="Sim" <?php echo $falta_nf == 'Sim' ? 'selected' : ''; ?>>Sim</option>
                     </select>
@@ -404,7 +404,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <!-- Observações -->
                 <div class="col-span-2">
                     <label for="observacoes" class="block text-sm font-medium text-gray-700 mb-1">Observações</label>
-                    <textarea name="observacoes" id="observacoes" rows="3" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 <?php echo $is_nc_edit ? 'bg-gray-100' : ''; ?>" <?php echo $is_nc_edit ? 'disabled' : ''; ?>><?php echo htmlspecialchars($observacoes); ?></textarea>
+                    <textarea name="observacoes" id="observacoes" rows="3" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 <?php echo $is_nc_edit ? 'bg-gray-100' : ''; ?>" <?php echo $is_nc_edit ? 'readonly' : ''; ?>><?php echo htmlspecialchars($observacoes); ?></textarea>
                 </div>
             </div>
 
