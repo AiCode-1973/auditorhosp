@@ -4,6 +4,7 @@ include 'includes/header.php';
 
 // Filtros
 $filtro_setor = isset($_GET['filtro_setor']) ? $_GET['filtro_setor'] : '';
+$filtro_convenio = isset($_GET['filtro_convenio']) ? $_GET['filtro_convenio'] : '';
 $filtro_guia = isset($_GET['filtro_guia']) ? $_GET['filtro_guia'] : '';
 $filtro_status = isset($_GET['filtro_status']) ? $_GET['filtro_status'] : '';
 $filtro_competencia = isset($_GET['filtro_competencia']) ? $_GET['filtro_competencia'] : '';
@@ -24,6 +25,11 @@ $params = [];
 if ($filtro_setor) {
     $where_clauses[] = "p.setor = ?";
     $params[] = $filtro_setor;
+}
+
+if ($filtro_convenio) {
+    $where_clauses[] = "p.convenio_id = ?";
+    $params[] = $filtro_convenio;
 }
 
 if ($filtro_guia) {
@@ -130,11 +136,23 @@ try {
         <form method="GET" class="flex flex-wrap items-end gap-4">
             <div>
                 <label for="filtro_setor" class="block text-sm font-medium text-gray-700 mb-1">Setor</label>
-                <select name="filtro_setor" id="filtro_setor" class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[120px]">
+                <select name="filtro_setor" id="filtro_setor" class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[140px]">
                     <option value="">Todos</option>
                     <option value="PA" <?php echo $filtro_setor == 'PA' ? 'selected' : ''; ?>>PA</option>
                     <option value="AMB" <?php echo $filtro_setor == 'AMB' ? 'selected' : ''; ?>>AMB</option>
-                    <option value="NC" <?php echo $filtro_setor == 'NC' ? 'selected' : ''; ?>>NC</option>
+                    <option value="PA/NC" <?php echo $filtro_setor == 'PA/NC' ? 'selected' : ''; ?>>PA/NC</option>
+                    <option value="AMB/NC" <?php echo $filtro_setor == 'AMB/NC' ? 'selected' : ''; ?>>AMB/NC</option>
+                </select>
+            </div>
+            <div>
+                <label for="filtro_convenio" class="block text-sm font-medium text-gray-700 mb-1">Convênio</label>
+                <select name="filtro_convenio" id="filtro_convenio" class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[200px]">
+                    <option value="">Todos</option>
+                    <?php foreach ($convenios as $c): ?>
+                        <option value="<?php echo $c['id']; ?>" <?php echo $filtro_convenio == $c['id'] ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($c['nome_convenio']); ?>
+                        </option>
+                    <?php endforeach; ?>
                 </select>
             </div>
             <div>
@@ -158,7 +176,7 @@ try {
             <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm font-medium">
                 Filtrar
             </button>
-            <?php if ($filtro_setor || $filtro_guia || $filtro_status || $filtro_competencia): ?>
+            <?php if ($filtro_setor || $filtro_convenio || $filtro_guia || $filtro_status || $filtro_competencia): ?>
                 <a href="pa_ambulatorio.php" class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition text-sm font-medium">
                     Limpar
                 </a>

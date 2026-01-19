@@ -5,10 +5,62 @@ session_start();
 $mensagem = '';
 $tipo_msg = 'info';
 
+// LIMPEZA PRÉVIA: Sempre deletar registros com setor vazio ANTES de qualquer processamento
+try {
+    // 1. Marcar registros de pa_ambulatorio com setor vazio como NÃO auditados
+    $sql_desauditar = "UPDATE pa_ambulatorio 
+                       SET status = 'Pendente' 
+                       WHERE status = 'Auditado' 
+                         AND (setor IS NULL OR setor = '' OR LENGTH(setor) = 0 OR TRIM(setor) = '')";
+    $pdo->exec($sql_desauditar);
+    
+    // 2. Deletar registros consolidados com setor vazio
+    $sql_limpeza = "DELETE FROM relatorio_mensal_pa_consolidado 
+                    WHERE setor IS NULL 
+                       OR setor = '' 
+                       OR LENGTH(setor) = 0 
+                       OR TRIM(setor) = ''";
+    $pdo->exec($sql_limpeza);
+} catch (PDOException $e) {
+    // Ignorar erros de limpeza prévia
+}
+
 // Processar consolidação
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
-        // Buscar todas as internações (pa_ambulatorio) agrupadas por competência, convênio e setor
+        // PASSO 1: DELETAR registros com setor vazio da tabela consolidada (limpeza de dados antigos)
+        $sql_deletar_vazios = "DELETE FROM relatorio_mensal_pa_consolidado 
+                               WHERE setor IS NULL 
+                                  OR setor = '' 
+                                  OR LENGTH(setor) = 0 
+                                  OR TRIM(setor) = ''";
+        $registros_deletados = $pdo->exec($sql_deletar_vazios);
+        
+        // PASSO 2: Remover duplicados que possam existir
+        $sql_encontrar_dups = "
+            SELECT competencia, convenio_id, setor, MIN(id) as id_manter
+            FROM relatorio_mensal_pa_consolidado
+            WHERE setor IS NOT NULL AND TRIM(setor) != ''
+            GROUP BY competencia, convenio_id, setor
+            HAVING COUNT(*) > 1
+        ";
+        $stmt_dups = $pdo->query($sql_encontrar_dups);
+        $duplicados = $stmt_dups->fetchAll(PDO::FETCH_ASSOC);
+        
+        foreach ($duplicados as $dup) {
+            // Manter apenas o registro mais antigo (MIN id), remover os demais
+            $sql_remover = "DELETE FROM relatorio_mensal_pa_consolidado 
+                           WHERE competencia = ? AND convenio_id = ? AND setor = ? AND id != ?";
+            $stmt_rem = $pdo->prepare($sql_remover);
+            $stmt_rem->execute([
+                $dup['competencia'], 
+                $dup['convenio_id'], 
+                $dup['setor'], 
+                $dup['id_manter']
+            ]);
+        }
+        
+        // PASSO 3: Buscar apenas registros com setor preenchido para consolidação
         $sql = "
             SELECT 
                 DATE_FORMAT(p.competencia, '%Y-%m-01') as competencia_consolidada,
@@ -25,7 +77,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 COUNT(*) as qtd_atendimentos
             FROM pa_ambulatorio p
             JOIN convenios c ON p.convenio_id = c.id
-            WHERE p.competencia IS NOT NULL AND p.status = 'Auditado'
+            WHERE p.competencia IS NOT NULL 
+              AND p.status = 'Auditado'
+              AND p.setor IS NOT NULL 
+              AND LENGTH(p.setor) > 0
             GROUP BY DATE_FORMAT(p.competencia, '%Y-%m'), p.convenio_id, p.setor
             ORDER BY competencia_consolidada DESC, c.nome_convenio, p.setor
         ";
@@ -38,6 +93,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $registros_inseridos = 0;
         
         foreach ($grupos as $grupo) {
+            // Usar setor diretamente (já filtrado na query, sem vazios)
+            $setor = trim($grupo['setor']);
+            
+            // PROTEÇÃO EXTRA: Pular registros com setor vazio (validação rigorosa)
+            if (empty($setor) || strlen($setor) == 0) {
+                continue; // Pular este grupo
+            }
+            
             // Calcular percentuais
             $perc_retirado = $grupo['valor_inicial'] > 0 
                 ? round(($grupo['valor_retirado'] / $grupo['valor_inicial']) * 100, 2) 
@@ -55,11 +118,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ? round(($grupo['valor_aceito'] / $grupo['valor_glosado']) * 100, 2) 
                 : 0;
             
-            // Verificar se já existe registro
+            // Verificar se já existe registro (buscar APENAS por setor exato)
             $sql_check = "SELECT id FROM relatorio_mensal_pa_consolidado 
                          WHERE competencia = ? AND convenio_id = ? AND setor = ?";
             $stmt_check = $pdo->prepare($sql_check);
-            $stmt_check->execute([$grupo['competencia_consolidada'], $grupo['convenio_id'], $grupo['setor']]);
+            $stmt_check->execute([$grupo['competencia_consolidada'], $grupo['convenio_id'], $setor]);
             $existe = $stmt_check->fetch(PDO::FETCH_ASSOC);
             
             if ($existe) {
@@ -109,7 +172,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt_insert->execute([
                     $grupo['competencia_consolidada'],
                     $grupo['convenio_id'],
-                    $grupo['setor'],
+                    $setor,
                     $grupo['valor_inicial'],
                     $grupo['valor_retirado'],
                     $grupo['valor_acrescentado'],
@@ -166,15 +229,15 @@ try {
         SELECT 
             DATE_FORMAT(p.competencia, '%m/%Y') as competencia_formatada,
             c.nome_convenio,
-            p.setor,
+            COALESCE(NULLIF(p.setor, ''), 'N/D') as setor,
             COUNT(*) as qtd_atendimentos,
             SUM(p.valor_inicial) as valor_inicial,
             SUM(p.valor_total) as valor_final
         FROM pa_ambulatorio p
         JOIN convenios c ON p.convenio_id = c.id
         WHERE p.competencia IS NOT NULL
-        GROUP BY DATE_FORMAT(p.competencia, '%Y-%m'), p.convenio_id, p.setor
-        ORDER BY p.competencia DESC, c.nome_convenio, p.setor
+        GROUP BY DATE_FORMAT(p.competencia, '%Y-%m'), p.convenio_id, COALESCE(NULLIF(p.setor, ''), 'N/D')
+        ORDER BY p.competencia DESC, c.nome_convenio, setor
         LIMIT 10
     ";
     
@@ -183,7 +246,7 @@ try {
     
     // Contar total
     $sql_count = "
-        SELECT COUNT(DISTINCT CONCAT(DATE_FORMAT(p.competencia, '%Y-%m'), '-', p.convenio_id, '-', p.setor)) as total
+        SELECT COUNT(DISTINCT CONCAT(DATE_FORMAT(p.competencia, '%Y-%m'), '-', p.convenio_id, '-', COALESCE(NULLIF(p.setor, ''), 'N/D'))) as total
         FROM pa_ambulatorio p
         WHERE p.competencia IS NOT NULL
     ";
