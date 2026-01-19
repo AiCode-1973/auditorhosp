@@ -325,8 +325,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <!-- Guia Paciente -->
                 <div>
-                    <label for="guia_paciente" class="block text-sm font-medium text-gray-700 mb-1">Guia Paciente</label>
-                    <input type="text" name="guia_paciente" id="guia_paciente" value="<?php echo htmlspecialchars($guia_paciente); ?>" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <label for="guia_paciente" class="block text-sm font-medium text-gray-700 mb-1">Guia Paciente *</label>
+                    <input type="text" name="guia_paciente" id="guia_paciente" value="<?php echo htmlspecialchars($guia_paciente); ?>" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
                 </div>
 
                 <!-- Data Entrada -->
