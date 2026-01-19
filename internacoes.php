@@ -7,6 +7,17 @@ $filtro_paciente = isset($_GET['filtro_paciente']) ? $_GET['filtro_paciente'] : 
 $filtro_guia = isset($_GET['filtro_guia']) ? $_GET['filtro_guia'] : '';
 $filtro_status = isset($_GET['filtro_status']) ? $_GET['filtro_status'] : '';
 $filtro_competencia = isset($_GET['filtro_competencia']) ? $_GET['filtro_competencia'] : '';
+$filtro_convenio = isset($_GET['filtro_convenio']) ? $_GET['filtro_convenio'] : '';
+$filtro_setor = isset($_GET['filtro_setor']) ? $_GET['filtro_setor'] : '';
+
+// Buscar convênios para o select
+try {
+    $sql_convenios = "SELECT id, nome_convenio FROM convenios ORDER BY nome_convenio";
+    $stmt_convenios = $pdo->query($sql_convenios);
+    $convenios_lista = $stmt_convenios->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $convenios_lista = [];
+}
 
 // Construção da query
 $where_clauses = [];
@@ -32,12 +43,44 @@ if ($filtro_competencia) {
     $params[] = $filtro_competencia . '-01';
 }
 
+if ($filtro_convenio) {
+    $where_clauses[] = "i.convenio_id = ?";
+    $params[] = $filtro_convenio;
+}
+
+if ($filtro_setor) {
+    $where_clauses[] = "i.setor = ?";
+    $params[] = $filtro_setor;
+}
+
+// Paginação
+$registros_por_pagina = isset($_GET['por_pagina']) ? (int)$_GET['por_pagina'] : 10;
+if (!in_array($registros_por_pagina, [5, 10, 20, 30, 50])) {
+    $registros_por_pagina = 10;
+}
+$pagina_atual = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
+if ($pagina_atual < 1) $pagina_atual = 1;
+$offset = ($pagina_atual - 1) * $registros_por_pagina;
+
 $where_sql = "";
 if (count($where_clauses) > 0) {
     $where_sql = "WHERE " . implode(" AND ", $where_clauses);
 }
 
 try {
+    // Contar total de registros
+    $sql_count = "
+        SELECT COUNT(*) as total
+        FROM internacoes i
+        JOIN convenios c ON i.convenio_id = c.id
+        $where_sql
+    ";
+    $stmt_count = $pdo->prepare($sql_count);
+    $stmt_count->execute($params);
+    $total_registros = $stmt_count->fetch(PDO::FETCH_ASSOC)['total'];
+    $total_paginas = ceil($total_registros / $registros_por_pagina);
+
+    // Buscar registros da página atual
     $sql = "
         SELECT 
             i.*, 
@@ -46,29 +89,37 @@ try {
         JOIN convenios c ON i.convenio_id = c.id
         $where_sql
         ORDER BY i.data_recebimento ASC, i.id ASC
+        LIMIT $registros_por_pagina OFFSET $offset
     ";
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
     $internacoes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Calcular totais
-    $total_inicial = 0;
-    $total_retirado = 0;
-    $total_acrescentado = 0;
-    $total_final = 0;
-    $total_glosado = 0;
-    $total_aceito = 0;
-    $total_faturado = 0;
-
-    foreach ($internacoes as $int) {
-        $total_inicial += $int['valor_inicial'];
-        $total_retirado += $int['valor_retirado'];
-        $total_acrescentado += $int['valor_acrescentado'];
-        $total_final += $int['valor_total'];
-        $total_glosado += $int['valor_glosado'];
-        $total_aceito += $int['valor_aceito'];
-        $total_faturado += $int['valor_faturado'];
-    }
+    // Calcular totais (de todos os registros, não só da página atual)
+    $sql_totais = "
+        SELECT 
+            SUM(i.valor_inicial) as total_inicial,
+            SUM(i.valor_retirado) as total_retirado,
+            SUM(i.valor_acrescentado) as total_acrescentado,
+            SUM(i.valor_total) as total_final,
+            SUM(i.valor_glosado) as total_glosado,
+            SUM(i.valor_aceito) as total_aceito,
+            SUM(i.valor_faturado) as total_faturado
+        FROM internacoes i
+        JOIN convenios c ON i.convenio_id = c.id
+        $where_sql
+    ";
+    $stmt_totais = $pdo->prepare($sql_totais);
+    $stmt_totais->execute($params);
+    $totais_row = $stmt_totais->fetch(PDO::FETCH_ASSOC);
+    
+    $total_inicial = $totais_row['total_inicial'] ?? 0;
+    $total_retirado = $totais_row['total_retirado'] ?? 0;
+    $total_acrescentado = $totais_row['total_acrescentado'] ?? 0;
+    $total_final = $totais_row['total_final'] ?? 0;
+    $total_glosado = $totais_row['total_glosado'] ?? 0;
+    $total_aceito = $totais_row['total_aceito'] ?? 0;
+    $total_faturado = $totais_row['total_faturado'] ?? 0;
 } catch (PDOException $e) {
     $internacoes = [];
     echo "<div class='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4' role='alert'>Erro ao carregar dados: " . $e->getMessage() . "</div>";
@@ -104,13 +155,32 @@ try {
                 <input type="month" name="filtro_competencia" id="filtro_competencia" value="<?php echo htmlspecialchars($filtro_competencia); ?>" class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
             <div>
+                <label for="filtro_convenio" class="block text-sm font-medium text-gray-700 mb-1">Convênio</label>
+                <select name="filtro_convenio" id="filtro_convenio" class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[150px]">
+                    <option value="">Todos</option>
+                    <?php foreach ($convenios_lista as $conv): ?>
+                        <option value="<?php echo $conv['id']; ?>" <?php echo $filtro_convenio == $conv['id'] ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($conv['nome_convenio']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div>
+                <label for="filtro_setor" class="block text-sm font-medium text-gray-700 mb-1">Setor</label>
+                <select name="filtro_setor" id="filtro_setor" class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[150px]">
+                    <option value="">Todos</option>
+                    <option value="Internacao" <?php echo $filtro_setor == 'Internacao' ? 'selected' : ''; ?>>Internação</option>
+                    <option value="PA" <?php echo $filtro_setor == 'PA' ? 'selected' : ''; ?>>PA</option>
+                    <option value="AMB" <?php echo $filtro_setor == 'AMB' ? 'selected' : ''; ?>>AMB</option>
+                </select>
+            </div>
+            <div>
                 <label for="filtro_status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
                 <select name="filtro_status" id="filtro_status" class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[150px]">
                     <option value="">Todos</option>
                     <option value="Pré análise" <?php echo $filtro_status == 'Pré análise' ? 'selected' : ''; ?>>Pré análise</option>
                     <option value="Em Aberto" <?php echo $filtro_status == 'Em Aberto' ? 'selected' : ''; ?>>Em Aberto</option>
                     <option value="Auditado" <?php echo $filtro_status == 'Auditado' ? 'selected' : ''; ?>>Auditado</option>
-                    <option value="Fechado" <?php echo $filtro_status == 'Fechado' ? 'selected' : ''; ?>>Fechado</option>
                 </select>
             </div>
             <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm font-medium">
@@ -119,12 +189,57 @@ try {
             <a href="exportar_internacoes_excel.php?<?php echo http_build_query($_GET); ?>" target="_blank" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition text-sm font-medium">
                 Exportar Excel
             </a>
-            <?php if ($filtro_paciente || $filtro_guia || $filtro_status || $filtro_competencia): ?>
+            <?php if ($filtro_paciente || $filtro_guia || $filtro_status || $filtro_competencia || $filtro_convenio || $filtro_setor): ?>
                 <a href="internacoes.php" class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition text-sm font-medium">
                     Limpar
                 </a>
             <?php endif; ?>
         </form>
+    </div>
+
+    <!-- Controles de Paginação -->
+    <div class="bg-white p-4 rounded-lg shadow border border-gray-200 mb-4">
+        <div class="flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2">
+                    <label for="por_pagina" class="text-sm font-medium text-gray-700">Registros por página:</label>
+                    <select name="por_pagina" id="por_pagina" onchange="mudarRegistrosPorPagina(this.value)" class="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="5" <?php echo $registros_por_pagina == 5 ? 'selected' : ''; ?>>5</option>
+                        <option value="10" <?php echo $registros_por_pagina == 10 ? 'selected' : ''; ?>>10</option>
+                        <option value="20" <?php echo $registros_por_pagina == 20 ? 'selected' : ''; ?>>20</option>
+                        <option value="30" <?php echo $registros_por_pagina == 30 ? 'selected' : ''; ?>>30</option>
+                        <option value="50" <?php echo $registros_por_pagina == 50 ? 'selected' : ''; ?>>50</option>
+                    </select>
+                </div>
+                <div class="text-sm text-gray-600">
+                    Mostrando <?php echo min($offset + 1, $total_registros); ?> a <?php echo min($offset + $registros_por_pagina, $total_registros); ?> de <?php echo $total_registros; ?> registros
+                </div>
+            </div>
+
+            <?php if ($total_paginas > 1): ?>
+                <div class="flex items-center gap-2">
+                    <?php if ($pagina_atual > 1): ?>
+                        <a href="?<?php echo http_build_query(array_merge($_GET, ['pagina' => 1])); ?>" class="px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50">Primeira</a>
+                        <a href="?<?php echo http_build_query(array_merge($_GET, ['pagina' => $pagina_atual - 1])); ?>" class="px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50">Anterior</a>
+                    <?php endif; ?>
+
+                    <?php
+                    $inicio = max(1, $pagina_atual - 2);
+                    $fim = min($total_paginas, $pagina_atual + 2);
+                    for ($i = $inicio; $i <= $fim; $i++):
+                    ?>
+                        <a href="?<?php echo http_build_query(array_merge($_GET, ['pagina' => $i])); ?>" class="px-3 py-1 border rounded-md text-sm <?php echo $i == $pagina_atual ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 text-gray-700 hover:bg-gray-50'; ?>">
+                            <?php echo $i; ?>
+                        </a>
+                    <?php endfor; ?>
+
+                    <?php if ($pagina_atual < $total_paginas): ?>
+                        <a href="?<?php echo http_build_query(array_merge($_GET, ['pagina' => $pagina_atual + 1])); ?>" class="px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50">Próxima</a>
+                        <a href="?<?php echo http_build_query(array_merge($_GET, ['pagina' => $total_paginas])); ?>" class="px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50">Última</a>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+        </div>
     </div>
 
     <!-- Tabela -->
@@ -292,6 +407,13 @@ try {
         
         const modal = document.getElementById('modalObservacao');
         modal.classList.add('hidden');
+    }
+
+    function mudarRegistrosPorPagina(quantidade) {
+        const params = new URLSearchParams(window.location.search);
+        params.set('por_pagina', quantidade);
+        params.set('pagina', '1'); // Resetar para primeira página
+        window.location.href = '?' + params.toString();
     }
 </script>
 

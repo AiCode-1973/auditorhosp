@@ -381,7 +381,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <option value="Pré análise" <?php echo $status == 'Pré análise' ? 'selected' : ''; ?>>Pré análise</option>
                         <option value="Em Aberto" <?php echo $status == 'Em Aberto' ? 'selected' : ''; ?>>Em Aberto</option>
                         <option value="Auditado" <?php echo $status == 'Auditado' ? 'selected' : ''; ?>>Auditado</option>
-                        <option value="Fechado" <?php echo $status == 'Fechado' ? 'selected' : ''; ?>>Fechado</option>
                     </select>
                 </div>
 
