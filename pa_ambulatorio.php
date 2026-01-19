@@ -168,9 +168,7 @@ try {
                 <select name="filtro_status" id="filtro_status" class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[150px]">
                     <option value="">Todos</option>
                     <option value="Pré análise" <?php echo $filtro_status == 'Pré análise' ? 'selected' : ''; ?>>Pré análise</option>
-                    <option value="Em Aberto" <?php echo $filtro_status == 'Em Aberto' ? 'selected' : ''; ?>>Em Aberto</option>
                     <option value="Auditado" <?php echo $filtro_status == 'Auditado' ? 'selected' : ''; ?>>Auditado</option>
-                    <option value="Fechado" <?php echo $filtro_status == 'Fechado' ? 'selected' : ''; ?>>Fechado</option>
                 </select>
             </div>
             <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm font-medium">
@@ -511,9 +509,7 @@ try {
                                 <div>
                                     <label for="modal_status" class="block text-sm font-medium text-gray-700 mb-1">Status *</label>
                                     <select name="status" id="modal_status" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" required>
-                                        <option value="Em Aberto">Em Aberto</option>
                                         <option value="Auditado">Auditado</option>
-                                        <option value="Fechado">Fechado</option>
                                     </select>
                                 </div>
 

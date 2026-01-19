@@ -397,9 +397,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
                     <select name="status" id="status" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="Pré análise" <?php echo $status == 'Pré análise' ? 'selected' : ''; ?>>Pré análise</option>
-                        <option value="Em Aberto" <?php echo $status == 'Em Aberto' ? 'selected' : ''; ?>>Em Aberto</option>
                         <option value="Auditado" <?php echo $status == 'Auditado' ? 'selected' : ''; ?>>Auditado</option>
-                        <option value="Fechado" <?php echo $status == 'Fechado' ? 'selected' : ''; ?>>Fechado</option>
                     </select>
                 </div>
 
