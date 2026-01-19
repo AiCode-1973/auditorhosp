@@ -2,22 +2,47 @@
 require_once 'db_config.php';
 include 'includes/header.php';
 
-// Filtro de Mês
-$filtro_mes = isset($_GET['mes']) ? $_GET['mes'] : '';
+// Filtro de Ano
+$filtro_ano = isset($_GET['ano']) ? $_GET['ano'] : '';
+$filtro_convenio_excluir = isset($_GET['convenio_excluir']) ? $_GET['convenio_excluir'] : '';
 
-// Buscar meses disponíveis
+// Buscar anos disponíveis
 try {
-    $sql_meses_disponiveis = "SELECT DISTINCT DATE_FORMAT(competencia, '%Y-%m') as mes FROM relatorio_mensal_consolidado ORDER BY mes DESC";
-    $stmt = $pdo->query($sql_meses_disponiveis);
-    $meses_disponiveis_filtro = $stmt->fetchAll(PDO::FETCH_COLUMN);
+    $sql_anos_disponiveis = "SELECT DISTINCT YEAR(competencia) as ano FROM relatorio_mensal_consolidado ORDER BY ano DESC";
+    $stmt = $pdo->query($sql_anos_disponiveis);
+    $anos_disponiveis_filtro = $stmt->fetchAll(PDO::FETCH_COLUMN);
 } catch (PDOException $e) {
-    $meses_disponiveis_filtro = [];
+    $anos_disponiveis_filtro = [];
+}
+
+// Buscar convênios disponíveis
+try {
+    $sql_convenios = "SELECT DISTINCT c.id, c.nome_convenio FROM convenios c JOIN relatorio_mensal_consolidado r ON c.id = r.convenio_id ORDER BY c.nome_convenio";
+    $stmt = $pdo->query($sql_convenios);
+    $convenios_disponiveis = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $convenios_disponiveis = [];
 }
 
 // Condição WHERE para filtro
+$where_clauses = [];
+$where_clauses_com_alias = [];
+
+if ($filtro_ano) {
+    $where_clauses[] = "YEAR(competencia) = " . $pdo->quote($filtro_ano);
+    $where_clauses_com_alias[] = "YEAR(r.competencia) = " . $pdo->quote($filtro_ano);
+}
+if ($filtro_convenio_excluir) {
+    $where_clauses[] = "convenio_id != " . $pdo->quote($filtro_convenio_excluir);
+    $where_clauses_com_alias[] = "r.convenio_id != " . $pdo->quote($filtro_convenio_excluir);
+}
+
 $where_filtro = "";
-if ($filtro_mes) {
-    $where_filtro = " WHERE DATE_FORMAT(competencia, '%Y-%m') = " . $pdo->quote($filtro_mes);
+$where_filtro_com_alias = "";
+
+if (count($where_clauses) > 0) {
+    $where_filtro = " WHERE " . implode(" AND ", $where_clauses);
+    $where_filtro_com_alias = " WHERE " . implode(" AND ", $where_clauses_com_alias);
 }
 
 // --- 1. Totais Gerais (Cards) ---
@@ -72,6 +97,7 @@ try {
             SUM(valor_retirado) as valor_retirado,
             SUM(valor_acrescentado) as valor_acrescentado
         FROM relatorio_mensal_consolidado
+        $where_filtro
         GROUP BY mes_sort, mes_label
         ORDER BY mes_sort ASC
         LIMIT 12
@@ -90,6 +116,7 @@ try {
             SUM(r.valor_final) as total
         FROM relatorio_mensal_consolidado r
         JOIN convenios c ON r.convenio_id = c.id
+        $where_filtro_com_alias
         GROUP BY c.nome_convenio
         ORDER BY total DESC
     ";
@@ -107,6 +134,7 @@ try {
             SUM(r.valor_glosado) as total_glosa
         FROM relatorio_mensal_consolidado r
         JOIN convenios c ON r.convenio_id = c.id
+        $where_filtro_com_alias
         GROUP BY c.nome_convenio
         HAVING total_glosa > 0
         ORDER BY total_glosa DESC
@@ -120,7 +148,7 @@ try {
 
 // --- 5. Detalhamento por Convênio ---
 try {
-    $sql_meses = "SELECT DISTINCT DATE_FORMAT(competencia, '%Y-%m') as mes FROM relatorio_mensal_consolidado ORDER BY mes DESC";
+    $sql_meses = "SELECT DISTINCT DATE_FORMAT(competencia, '%Y-%m') as mes FROM relatorio_mensal_consolidado $where_filtro ORDER BY mes DESC";
     $stmt_meses = $pdo->query($sql_meses);
     $meses_disponiveis = $stmt_meses->fetchAll(PDO::FETCH_COLUMN);
 
@@ -137,6 +165,7 @@ try {
             SUM(r.valor_aceito) as total_aceito
         FROM relatorio_mensal_consolidado r
         JOIN convenios c ON r.convenio_id = c.id
+        $where_filtro_com_alias
         GROUP BY c.id, c.nome_convenio, mes_competencia
         ORDER BY c.nome_convenio, mes_competencia DESC
     ";
@@ -156,6 +185,7 @@ try {
             SUM(r.valor_final) as total_final
         FROM relatorio_mensal_consolidado r
         JOIN convenios c ON r.convenio_id = c.id
+        $where_filtro_com_alias
         GROUP BY c.nome_convenio
         ORDER BY c.nome_convenio
         LIMIT 8
@@ -297,23 +327,34 @@ try {
             </div>
         </div>
         
-        <!-- Filtro de Mês -->
+        <!-- Filtro de Ano -->
         <form method="GET" action="" class="flex items-center gap-3">
-            <label class="text-slate-300 text-sm font-medium">Filtrar por Mês:</label>
-            <select name="mes" onchange="this.form.submit()" class="bg-slate-800 border border-slate-600 text-white text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 px-4 py-2">
-                <option value="">Todos os Meses</option>
-                <?php foreach ($meses_disponiveis_filtro as $mes): ?>
-                    <option value="<?php echo $mes; ?>" <?php echo ($filtro_mes == $mes) ? 'selected' : ''; ?>>
-                        <?php echo date('m/Y', strtotime($mes . '-01')); ?>
+            <label class="text-slate-300 text-sm font-medium">Filtrar por Ano:</label>
+            <select name="ano" onchange="this.form.submit()" class="bg-slate-800 border border-slate-600 text-white text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 px-4 py-2">
+                <option value="">Todos os Anos</option>
+                <?php foreach ($anos_disponiveis_filtro as $ano): ?>
+                    <option value="<?php echo $ano; ?>" <?php echo ($filtro_ano == $ano) ? 'selected' : ''; ?>>
+                        <?php echo $ano; ?>
                     </option>
                 <?php endforeach; ?>
             </select>
-            <?php if ($filtro_mes): ?>
+            
+            <label class="text-slate-300 text-sm font-medium ml-4">Excluir Convênio:</label>
+            <select name="convenio_excluir" onchange="this.form.submit()" class="bg-slate-800 border border-slate-600 text-white text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 px-4 py-2">
+                <option value="">Nenhum</option>
+                <?php foreach ($convenios_disponiveis as $conv): ?>
+                    <option value="<?php echo $conv['id']; ?>" <?php echo ($filtro_convenio_excluir == $conv['id']) ? 'selected' : ''; ?>>
+                        <?php echo htmlspecialchars($conv['nome_convenio']); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+            
+            <?php if ($filtro_ano || $filtro_convenio_excluir): ?>
                 <a href="?" class="text-slate-400 hover:text-cyan-400 text-sm transition">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
-                    Limpar Filtro
+                    Limpar Filtros
                 </a>
             <?php endif; ?>
         </form>
