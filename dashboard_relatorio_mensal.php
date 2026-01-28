@@ -371,7 +371,7 @@ try {
             </div>
             <p class="text-sm font-medium text-cyan-300 uppercase tracking-wider mb-2">Valor Inicial</p>
             <p class="text-3xl font-bold text-white relative z-10">R$ <?php echo number_format($totais['total_inicial'], 2, ',', '.'); ?></p>
-            <div class="mt-4 flex items-center text-xs text-slate-400">
+            <div class="mt-4 flex items-center text-lg text-slate-400">
                 <span class="w-2 h-2 rounded-full bg-blue-500 mr-2 animate-pulse"></span> Total Geral
             </div>
             <div class="absolute bottom-0 left-0 h-1 bg-gradient-to-r from-blue-500 to-cyan-400 w-full"></div>
@@ -389,7 +389,7 @@ try {
                 <span class="card-value-money">R$ <?php echo number_format($totais['total_retirado'], 2, ',', '.'); ?></span>
                 <span class="card-value-percent hidden"><?php echo number_format($perc_retirado_geral, 2, ',', '.'); ?>%</span>
             </p>
-            <p class="text-xs text-red-400 mt-2 relative z-10">
+            <p class="text-lg text-red-400 mt-2 relative z-10">
                 <span class="card-sub-default"><?php echo number_format($perc_retirado_geral, 2, ',', '.'); ?>% do Valor Inicial</span>
                 <span class="card-sub-alt hidden">do Valor Inicial</span>
             </p>
@@ -408,7 +408,7 @@ try {
                 <span class="card-value-money">R$ <?php echo number_format($totais['total_acrescentado'], 2, ',', '.'); ?></span>
                 <span class="card-value-percent hidden"><?php echo number_format($perc_acrescentado_geral, 2, ',', '.'); ?>%</span>
             </p>
-            <p class="text-xs text-green-400 mt-2 relative z-10">
+            <p class="text-lg text-green-400 mt-2 relative z-10">
                 <span class="card-sub-default"><?php echo number_format($perc_acrescentado_geral, 2, ',', '.'); ?>% do Valor Inicial</span>
                 <span class="card-sub-alt hidden">do Valor Inicial</span>
             </p>
@@ -424,7 +424,7 @@ try {
             </div>
             <p class="text-sm font-medium text-yellow-300 uppercase tracking-wider mb-2">Valor Final</p>
             <p class="text-3xl font-bold text-white relative z-10">R$ <?php echo number_format($totais['total_final'], 2, ',', '.'); ?></p>
-            <p class="text-xs text-yellow-400 mt-2 relative z-10">Inicial - Retirado + Acrescentado</p>
+            <p class="text-lg text-yellow-400 mt-2 relative z-10">Inicial - Retirado + Acrescentado</p>
             <div class="absolute bottom-0 left-0 h-1 bg-gradient-to-r from-yellow-500 to-amber-300 w-full"></div>
         </div>
     </div>
@@ -443,7 +443,7 @@ try {
                 <span class="card-value-money">R$ <?php echo number_format($totais['total_glosado'], 2, ',', '.'); ?></span>
                 <span class="card-value-percent hidden"><?php echo number_format($perc_glosado_geral, 2, ',', '.'); ?>%</span>
             </p>
-            <p class="text-xs text-red-400 mt-2 relative z-10">
+            <p class="text-lg text-red-400 mt-2 relative z-10">
                 <span class="card-sub-default"><?php echo number_format($perc_glosado_geral, 2, ',', '.'); ?>% do Valor Final</span>
                 <span class="card-sub-alt hidden">do Valor Final</span>
             </p>
@@ -462,7 +462,7 @@ try {
                 <span class="card-value-money">R$ <?php echo number_format($totais['total_aceito'], 2, ',', '.'); ?></span>
                 <span class="card-value-percent hidden"><?php echo number_format($perc_aceito_geral, 2, ',', '.'); ?>%</span>
             </p>
-            <p class="text-xs text-green-400 mt-2 relative z-10">
+            <p class="text-lg text-green-400 mt-2 relative z-10">
                 <span class="card-sub-default"><?php echo number_format($perc_aceito_geral, 2, ',', '.'); ?>% do Glosado</span>
                 <span class="card-sub-alt hidden">do Glosado</span>
             </p>
@@ -507,32 +507,32 @@ try {
             <div class="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
                 <p class="text-xs font-medium text-cyan-400 uppercase">Inicial</p>
                 <p class="text-xl font-bold text-white" id="convInicial">R$ 0,00</p>
-                <p class="text-xs text-slate-400 mt-1">Base de cálculo</p>
+                <p class="text-base text-slate-400 mt-1">Base de cálculo</p>
             </div>
             <div class="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
                 <p class="text-xs font-medium text-red-400 uppercase">Retirado</p>
                 <p class="text-xl font-bold text-red-500" id="convRetirado">R$ 0,00</p>
-                <p class="text-xs text-red-400 mt-1" id="convPercRetirado">0,00% do Inicial</p>
+                <p class="text-base text-red-400 mt-1" id="convPercRetirado">0,00% do Inicial</p>
             </div>
             <div class="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
                 <p class="text-xs font-medium text-green-400 uppercase">Acrescentado</p>
                 <p class="text-xl font-bold text-green-500" id="convAcrescentado">R$ 0,00</p>
-                <p class="text-xs text-green-400 mt-1" id="convPercAcrescentado">0,00% do Inicial</p>
+                <p class="text-base text-green-400 mt-1" id="convPercAcrescentado">0,00% do Inicial</p>
             </div>
             <div class="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
                 <p class="text-xs font-medium text-yellow-400 uppercase">Final</p>
                 <p class="text-xl font-bold text-yellow-500" id="convFinal">R$ 0,00</p>
-                <p class="text-xs text-slate-400 mt-1">Inicial - Retirado + Acrescentado</p>
+                <p class="text-basetext-slate-400 mt-1">Inicial - Retirado + Acrescentado</p>
             </div>
             <div class="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
                 <p class="text-xs font-medium text-red-400 uppercase">Glosado</p>
                 <p class="text-xl font-bold text-red-500" id="convGlosado">R$ 0,00</p>
-                <p class="text-xs text-red-400 mt-1" id="convPercGlosado">0,00% do Final</p>
+                <p class="text-base text-red-400 mt-1" id="convPercGlosado">0,00% do Final</p>
             </div>
             <div class="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
                 <p class="text-xs font-medium text-green-400 uppercase">Aceito</p>
                 <p class="text-xl font-bold text-green-500" id="convAceito">R$ 0,00</p>
-                <p class="text-xs text-green-400 mt-1" id="convPercAceito">0,00% do Glosado</p>
+                <p class="text-base text-green-400 mt-1" id="convPercAceito">0,00% do Glosado</p>
             </div>
         </div>
         
